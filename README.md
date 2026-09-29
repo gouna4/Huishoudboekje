@@ -1,7 +1,7 @@
 # Huishoudboek · v7
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
-krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
+krijgen waar je kunt besparen.
 
 **Geen server, geen account, geen internet nodig.** Wat je invult blijft in de
 opslag van de browser op je eigen toestel en wordt nergens naartoe gestuurd.
