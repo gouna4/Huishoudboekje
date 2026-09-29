@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Huishoudboek</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Huishoudboek">
+<meta name="theme-color" content="#111614">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+/* Huishoudboek · v1 — broertje van het telefoonboek en het klusboek */
+:root{
+  --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
+  --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
+  --accent:#43B98E;    /* knoppen, vaste lasten */
+  --accent2:#7FA7E6;   /* losse uitgaven */
+  --saffron:#E7AE45;   /* tips, besparen */
+  --clay:#D0634F;      /* duurder geworden, weg */
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI Variable','Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Roboto Mono',monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--night);color:var(--sand);font-family:var(--sans);
+  font-size:16px;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{min-height:100vh}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:0;background:none;color:inherit;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font-family:inherit;font-size:16px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.dim{color:var(--dim)}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+
+/* ── kop ── */
+.top{position:sticky;top:0;z-index:20;background:var(--night);padding-top:env(safe-area-inset-top)}
+.top-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px 12px}
+.title{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.sub{font-size:12px;color:var(--dim);margin-top:3px}
+.knoppen{display:flex;gap:8px}
+.icon-btn{width:44px;height:44px;background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  display:flex;align-items:center;justify-content:center;color:var(--sand)}
+.icon-btn.on{border-color:var(--saffron);color:var(--saffron)}
+.icon-btn svg{width:20px;height:20px}
+
+/* ── onderbalk ── */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(17,22,20,.96);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.nav-in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;
+  font-size:11px;font-weight:600;color:var(--faint);min-height:58px}
+.nav button svg{width:23px;height:23px}
+.nav button.on{color:var(--accent)}
+.nav .badge{position:absolute;margin-left:20px;margin-top:-3px;background:var(--saffron);color:#1B1408;
+  font-size:10px;font-weight:800;border-radius:99px;padding:1px 5px}
+.nav .ic{position:relative;display:flex}
+
+.fab{position:fixed;z-index:25;right:max(16px,calc(50% - 244px));bottom:calc(76px + env(safe-area-inset-bottom));
+  width:58px;height:58px;border-radius:20px;background:var(--accent);color:#08140F;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.fab svg{width:28px;height:28px}
+.fab:active{transform:scale(.95)}
+
+/* ── blokken ── */
+.hero{background:linear-gradient(155deg,#1E2A25,var(--surface));border:1px solid var(--line);border-radius:22px;
+  padding:18px 18px 16px;margin-top:6px}
+.hero .k{font-size:12px;color:var(--dim);font-weight:600}
+.hero .v{font-family:var(--mono);font-size:40px;font-weight:650;letter-spacing:-.04em;margin-top:6px;line-height:1}
+.hero .s{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--dim);margin-top:10px}
+.hero .s b{color:var(--sand);font-family:var(--mono);font-weight:600}
+.meter{height:8px;border-radius:99px;background:var(--surface2);margin-top:14px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.meter.warn i{background:var(--saffron)}
+.meter.te i{background:var(--clay)}
+.meterlab{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:6px}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:11px 11px 10px;text-align:left;min-width:0}
+.kpi .k{font-size:11px;color:var(--dim);line-height:1.2;min-height:26px}
+.kpi .v{font-family:var(--mono);font-size:15px;font-weight:650;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.h2{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:26px 2px 10px}
+.h2 h2{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em}
+.h2 .r{font-size:12px;color:var(--dim)}
+.h2 button.r{color:var(--accent);font-weight:600;font-size:13px;padding:6px 0}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.card+.card{margin-top:10px}
+.note{font-size:12.5px;color:var(--dim);line-height:1.5;margin-top:8px}
+.leeg{padding:22px 18px;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
+
+/* rij zoals op de bankapp: gekleurd rondje, naam, bedrag */
+.rij{display:flex;align-items:center;gap:12px;padding:11px 14px;width:100%;text-align:left;min-height:62px}
+.rij+.rij{border-top:1px solid var(--line)}
+.rij:active{background:var(--surface2)}
+.rij .t{flex:1;min-width:0}
+.rij .n{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rij .m{font-size:12px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rij .b{text-align:right;flex:0 0 auto}
+.rij .b .a{font-family:var(--mono);font-size:15px;font-weight:600;white-space:nowrap}
+.rij .b .p{font-size:11.5px;color:var(--dim);margin-top:2px;white-space:nowrap}
+.rij.uit{opacity:.5}
+.weg{flex:0 0 auto;width:46px;height:46px;border-radius:13px;border:1px solid rgba(208,99,79,.6);color:var(--clay);display:flex;align-items:center;justify-content:center}
+.weg svg{width:20px;height:20px}
+.up{color:var(--clay)}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+.tag.af{background:rgba(67,185,142,.16);color:var(--accent)}
+.tag.nog{background:rgba(127,167,230,.16);color:var(--accent2)}
+.tag.stop{background:rgba(208,99,79,.16);color:var(--clay)}
+
+.ico{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.ico svg{width:21px;height:21px}
+.ico.s{width:32px;height:32px}.ico.s svg{width:17px;height:17px}
+
+.groep{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin:20px 0 8px;
+  font-size:12px;color:var(--dim);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.groep span:last-child{font-family:var(--mono);text-transform:none;letter-spacing:0}
+
+/* ── balken per categorie ── */
+.bars{padding:6px 14px 10px}
+.bar{display:grid;grid-template-columns:32px 1fr auto;gap:4px 10px;align-items:center;padding:8px 0;width:100%;text-align:left}
+.bar .nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .am{font-family:var(--mono);font-size:13.5px;font-weight:600;text-align:right;white-space:nowrap}
+.bar .tr{grid-column:2 / 4;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar .tr i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.bar .pc{color:var(--dim);font-weight:400;font-size:12px;margin-left:6px}
+
+/* ── maandgrafiek ── */
+.chart{padding:14px 12px 10px}
+.cols{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;height:150px;align-items:end}
+.col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;position:relative}
+.col .stk{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%}
+.col .sv{background:var(--accent);border-radius:0 0 2px 2px}
+.col .sl{background:var(--accent2);border-radius:4px 4px 0 0}
+.col .sv:first-child{border-radius:4px 4px 2px 2px}
+.col.dimmed .sv,.col.dimmed .sl{opacity:.45}
+.col .tot{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;margin-bottom:4px;white-space:nowrap}
+.colx{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:6px}
+.colx span{font-size:11.5px;color:var(--dim);text-align:center;text-transform:capitalize}
+.colx span.on{color:var(--sand);font-weight:700}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:10px 4px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.mnav .mn{font-size:18px;font-weight:700;text-transform:capitalize}
+.mnav .icon-btn{width:44px}
+.drie{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+
+/* ── tips ── */
+.tip{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px 15px 13px;margin-top:10px;position:relative}
+.tip.hoog{border-color:rgba(231,174,69,.55)}
+.tip .th{display:flex;gap:12px;align-items:flex-start}
+.tip .tt{font-size:15px;font-weight:700;line-height:1.3}
+.tip .tx{font-size:13.5px;line-height:1.55;color:#C9D2CC;margin-top:8px}
+.tip .sv{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:700;color:var(--saffron)}
+.tip .ta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tip .ta a,.tip .ta button{font-size:13px;font-weight:600;border-radius:10px;padding:9px 12px;
+  background:var(--surface2);border:1px solid var(--line);color:var(--sand);text-decoration:none}
+.tip .ta a{color:var(--accent)}
+.bespaar{background:linear-gradient(155deg,#2A2616,var(--surface));border:1px solid rgba(231,174,69,.5);border-radius:22px;padding:18px;margin-top:6px}
+.bespaar .k{font-size:12px;color:var(--saffron);font-weight:700}
+.bespaar .v{font-family:var(--mono);font-size:34px;font-weight:650;letter-spacing:-.03em;margin-top:6px}
+.bespaar .s{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.45}
+.toptip{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-top:10px;
+  background:linear-gradient(155deg,#2A2616,var(--surface));border:1px solid rgba(231,174,69,.5);border-radius:18px;padding:14px}
+.toptip .t{flex:1;min-width:0}
+.toptip .k{font-size:11.5px;color:var(--saffron);font-weight:700}
+.toptip .n{font-size:14.5px;font-weight:600;margin-top:3px;line-height:1.3}
+
+.melding{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface2);
+  border:1px solid var(--saffron);border-radius:14px;padding:11px 12px;margin-top:4px;font-size:13px;line-height:1.4}
+.melding button{flex:0 0 auto;background:var(--saffron);color:#1B1408;border-radius:10px;padding:9px 12px;font-weight:700;font-size:13px}
+.flash{background:rgba(67,185,142,.14);border:1px solid rgba(67,185,142,.5);border-radius:14px;padding:11px 13px;margin-top:4px;font-size:13.5px}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:9px 13px;font-size:13.5px;font-weight:600;color:var(--sand)}
+.chip.on{background:var(--sand);color:var(--night);border-color:var(--sand)}
+.chip.voorbeeld{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px}
+.search{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px;color:var(--sand)}
+.zoekrij{display:flex;gap:8px;margin-top:6px}
+.zoekrij .search{flex:1}
+
+/* ── onderblad ── */
+.sheet-bg{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);display:none;animation:fade .18s both}
+.sheet-bg.open{display:block}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--night);border-top:1px solid var(--line);border-radius:22px 22px 0 0;
+  padding:8px 0 calc(24px + env(safe-area-inset-bottom));display:none;animation:up .24s cubic-bezier(.2,.8,.2,1) both;overscroll-behavior:contain}
+@supports (max-height:92dvh){.sheet{max-height:92dvh}}
+.sheet.open{display:block}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.sheet-in{max-width:520px;margin:0 auto;padding:0 18px}
+.grip{width:40px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 12px}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.shead h3{margin:0;font-size:19px;letter-spacing:-.01em}
+.x{width:40px;height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.x svg{width:18px;height:18px}
+.label{font-size:12px;font-weight:700;color:var(--dim);margin:16px 2px 7px;letter-spacing:.02em}
+.field{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px;color:var(--sand)}
+textarea.field{min-height:74px;resize:vertical}
+.field.groot{font-family:var(--mono);font-size:28px;font-weight:650;padding:12px 14px}
+.eur{position:relative}
+.eur .field{padding-left:38px}
+.eur:before{content:'€';position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:18px;font-weight:600}
+.eur.groot:before{font-size:26px}
+.eur.groot .field{padding-left:44px}
+.twee{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.omrek{font-size:13px;color:var(--dim);margin:8px 2px 0}
+.omrek b{color:var(--sand);font-family:var(--mono)}
+.catkeus{display:flex;align-items:center;gap:12px;width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:10px 12px;text-align:left}
+.catkeus .t{flex:1;font-weight:600}
+.catkeus .w{font-size:13px;color:var(--accent);font-weight:600}
+.catgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.catgrid button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px;border-radius:14px;border:1px solid transparent}
+.catgrid button span{font-size:10.5px;line-height:1.2;text-align:center;color:var(--dim);max-width:100%}
+.catgrid button.on{background:var(--surface);border-color:var(--accent)}
+.catgrid button.on span{color:var(--sand);font-weight:600}
+.btn{display:block;width:100%;background:var(--accent);color:#08140F;border-radius:14px;padding:15px;font-size:16px;font-weight:700;margin-top:20px;text-align:center}
+.btn.outline{background:var(--surface);color:var(--sand);border:1px solid var(--line);margin-top:10px;font-weight:600}
+.btn.rood{background:none;border:1px solid rgba(208,99,79,.6);color:var(--clay);margin-top:10px;font-weight:600}
+.btn.klein{padding:12px;font-size:14.5px}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px}
+.stepper .sl{font-weight:600;font-size:15px}
+.stepper .sc{display:flex;align-items:center;gap:6px}
+.stepper button{width:44px;height:44px;border-radius:11px;background:var(--surface2);font-size:22px;font-weight:600}
+.stepper .sn{min-width:28px;text-align:center;font-family:var(--mono);font-size:18px;font-weight:700}
+.stepper+.stepper{margin-top:8px}
+.schakel{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:13px 14px;text-align:left;font-weight:600}
+.schakel i{flex:0 0 auto;width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;transition:background .15s}
+.schakel i:after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--sand);transition:transform .15s}
+.schakel.on i{background:var(--accent)}
+.schakel.on i:after{transform:translateX(18px)}
+.hist{font-size:13px;line-height:1.7;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:10px 14px}
+.hist div{display:flex;justify-content:space-between}
+.hist .mono{font-weight:600}
+.divider{height:1px;background:var(--line);margin:22px 0 4px}
+.versie{text-align:center;color:var(--faint);font-size:12px;margin-top:22px}
+
+.vraag-bg{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+.vraag{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;max-width:380px;width:100%}
+.vraag h4{margin:0;font-size:17px}
+.vraag p{font-size:14px;color:var(--dim);line-height:1.5;margin:10px 0 0}
+.vraag .twee{margin-top:18px}
+.vraag .btn{margin:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="sheet-bg" id="sheetbg" data-act="close"></div>
+<div class="sheet" id="sheet"></div>
+<div id="vraag"></div>
+<input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
+<script>
+var VERSIE='1';
+var KEY='huishoudboek';
+
+/* ─────────────────────────── pictogrammen ───────────────────────────
+   Eigen lijntekeningen op een raster van 24, zoals de rondjes in de bankapp. */
+function svg(p,fill){return '<svg viewBox="0 0 24 24" fill="'+(fill||'none')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'}
+var P={
+  huis:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  bliksem:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  druppel:'<path d="M12 2.7C9 6.5 6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-3-7.5-6-11.3z"/>',
+  wifi:'<path d="M2 8.8a15 15 0 0 1 20 0M5 12.3a10 10 0 0 1 14 0M8.5 15.8a5 5 0 0 1 7 0"/><circle cx="12" cy="19.3" r=".6" fill="currentColor"/>',
+  mobiel:'<rect x="6.5" y="2" width="11" height="20" rx="2.5"/><path d="M11 18h2"/>',
+  hartplus:'<path d="M12 20.5s-7.5-4.6-9.3-9.5A4.9 4.9 0 0 1 12 6.6a4.9 4.9 0 0 1 9.3 4.4c-1.8 4.9-9.3 9.5-9.3 9.5z"/><path d="M12 10v5.5M9.3 12.7h5.4"/>',
+  schild:'<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  gemeente:'<path d="M3 21h18M5 21v-9M9.5 21v-9M14.5 21v-9M19 21v-9M2.5 9 12 3.5 21.5 9z"/>',
+  kar:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.9-1.5L21 7H6"/>',
+  play:'<rect x="2" y="4.5" width="20" height="15" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  halter:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
+  auto:'<path d="M5 17H3.5v-4.5L5.5 7h13l2 5.5V17H19M3.5 12.5h17M9.5 17h5"/><circle cx="7.3" cy="17" r="2"/><circle cx="16.7" cy="17" r="2"/>',
+  pomp:'<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V9l-3-3"/>',
+  trein:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8.5 21l2-4M15.5 21l-2-4"/><circle cx="9" cy="13.5" r=".6" fill="currentColor"/><circle cx="15" cy="13.5" r=".6" fill="currentColor"/>',
+  kind:'<circle cx="12" cy="5" r="2.5"/><path d="M12 8.5V15M7.5 11.5 12 9.5l4.5 2M9.5 21l2.5-6 2.5 6"/>',
+  hoed:'<path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.5V16c3 2.5 9 2.5 12 0v-4.5M22 9.5V15"/>',
+  pil:'<path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"/><path d="m8.5 8.5 7 7"/>',
+  bestek:'<path d="M7 2v20M4 2v6a3 3 0 0 0 6 0V2M17 22V2c-2.5 1-4 3.5-4 7s1.5 4 4 4"/>',
+  shirt:'<path d="M8 3 3 6l2 5 3-1v11h8V10l3 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/>',
+  schaar:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+  poot:'<circle cx="5.5" cy="10" r="1.8"/><circle cx="9" cy="5.5" r="1.8"/><circle cx="15" cy="5.5" r="1.8"/><circle cx="18.5" cy="10" r="1.8"/><path d="M12 12c-3 0-5.5 3.5-5.5 6 0 1.7 1.3 2.5 2.7 2.5 1.2 0 1.8-.6 2.8-.6s1.6.6 2.8.6c1.4 0 2.7-.8 2.7-2.5 0-2.5-2.5-6-5.5-6z"/>',
+  vliegtuig:'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  cadeau:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+  handhart:'<path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16M7 20l1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.8-2.9l-4.2 3.9M2 15l6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.7 2.7 0 0 0 16.6 4 2.7 2.7 0 0 0 12 5.8c0 1.2.8 2 1.5 2.7L16.5 11z"/>',
+  spaarpot:'<path d="M19 7c-.7-1-1.8-1.9-3-2.5V2l-2.5 1.8a8.6 8.6 0 0 0-2.5-.3C6 3.5 3 7 3 11c0 2.4 1.2 4.3 3 5.5V20h3v-2h4v2h3v-3.2c1-.6 1.9-1.4 2.5-2.3H21v-5z"/><circle cx="15.5" cy="9.5" r=".6" fill="currentColor"/>',
+  pas:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
+  puntjes:'<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>',
+  /* knoppen */
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  kruis:'<path d="M18 6 6 18M6 6l12 12"/>',
+  tandwiel:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  oog:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  oogdicht:'<path d="M9.9 4.2A9.6 9.6 0 0 1 12 4c6.5 0 10 8 10 8a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 8 10 8a9.4 9.4 0 0 0 5.4-1.6M2 2l20 20M14.1 14.2a3 3 0 0 1-4.2-4.2"/>',
+  links:'<path d="m15 18-6-6 6-6"/>',
+  rechts:'<path d="m9 18 6-6-6-6"/>',
+  overzicht:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  herhaal:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
+  bon:'<path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+  prul:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  lamp:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>'
+};
+
+/* ───────────────────────────── categorieën ───────────────────────────── */
+var CATS=[
+  {id:'wonen',     n:'Huur & hypotheek',       c:'#C0674A', i:'huis'},
+  {id:'energie',   n:'Gas & stroom',           c:'#D69A2A', i:'bliksem'},
+  {id:'water',     n:'Water',                  c:'#3E8FD0', i:'druppel'},
+  {id:'internet',  n:'Internet & tv',          c:'#6C6FD8', i:'wifi'},
+  {id:'mobiel',    n:'Mobiel',                 c:'#8E63C9', i:'mobiel'},
+  {id:'zorgverz',  n:'Zorgverzekering',        c:'#CF557A', i:'hartplus'},
+  {id:'verzek',    n:'Verzekeringen',          c:'#4F7FA8', i:'schild'},
+  {id:'belasting', n:'Gemeente & belasting',   c:'#7D8793', i:'gemeente'},
+  {id:'boodsch',   n:'Boodschappen',           c:'#3FA66B', i:'kar'},
+  {id:'streaming', n:'Streaming & abonnementen',c:'#C8484F', i:'play'},
+  {id:'sport',     n:'Sport',                  c:'#DE7636', i:'halter'},
+  {id:'auto',      n:'Auto',                   c:'#5B6FB0', i:'auto'},
+  {id:'brandstof', n:'Brandstof & laden',      c:'#AE6E38', i:'pomp'},
+  {id:'ov',        n:'Openbaar vervoer',       c:'#C99A22', i:'trein'},
+  {id:'kinder',    n:'Kinderen & opvang',      c:'#C0649A', i:'kind'},
+  {id:'onderwijs', n:'School & studie',        c:'#4E7D9E', i:'hoed'},
+  {id:'zorg',      n:'Zorg & apotheek',        c:'#35A09C', i:'pil'},
+  {id:'uiteten',   n:'Uit eten & bezorgen',    c:'#D0663A', i:'bestek'},
+  {id:'kleding',   n:'Kleding',                c:'#9C5FB0', i:'shirt'},
+  {id:'verzorging',n:'Verzorging & kapper',    c:'#B45A8B', i:'schaar'},
+  {id:'huisdier',  n:'Huisdieren',             c:'#8A6E4B', i:'poot'},
+  {id:'vakantie',  n:'Vakantie & uitjes',      c:'#2E9BBF', i:'vliegtuig'},
+  {id:'cadeau',    n:'Cadeaus',                c:'#CF4760', i:'cadeau'},
+  {id:'goeddoel',  n:'Goede doelen & moskee',  c:'#3B9878', i:'handhart'},
+  {id:'sparen',    n:'Sparen',                 c:'#4AA357', i:'spaarpot'},
+  {id:'lening',    n:'Lening & aflossing',     c:'#7A5A9A', i:'pas'},
+  {id:'overig',    n:'Overig',                 c:'#66736D', i:'puntjes'}
+];
+var CAT={}; CATS.forEach(function(c){CAT[c.id]=c});
+/* bij losse uitgaven staan deze vooraan, die koop je het vaakst */
+var LOS_EERST=['boodsch','uiteten','brandstof','kleding','verzorging','zorg','kinder','cadeau','vakantie','huisdier','ov','goeddoel','overig'];
+
+/* Als je een naam typt, kiest de app zelf een categorie, zoals de bank dat doet
+   als je ergens pint. Je kunt hem daarna altijd nog veranderen. */
+var HERKEN=[
+  ['wonen',/huur|hypothe|woonbond|vve|servicekost|woningcorp|ymere|vestia|portaal|woonstad|eigen haard/],
+  ['energie',/energ|stroom|gas\b|gas &|elektr|vattenfall|eneco|essent|greenchoice|budget ?energie|pure energie|oxxio|vandebron|frank energie|tibber|zonneplan|stadsverwarming|warmte/],
+  ['water',/water(?!schap)|vitens|evides|dunea|pwn|brabant water|oasen|waternet|wml/],
+  ['internet',/internet|glasvezel|ziggo|kpn(?! mobiel)|delta|caiway|odido thuis|youfone thuis|tv[- ]?pakket|canal/],
+  ['mobiel',/mobiel|sim|telefoon|vodafone|odido|t-mobile|lebara|simyo|ben\b|hollandsnieuwe|youfone|lyca|budget mobiel|tele2/],
+  ['zorgverz',/zorgverz|zilveren kruis|\bcz\b|vgz|menzis|ohra|fbto|zekur|ditzo|\bdsw\b|anderzorg|interpolis zorg|unive zorg|eigen risico|aanvullend/],
+  ['verzek',/verzeker|inboedel|opstal|aansprakelijk|\bwa\b|rechtsbijstand|reisverz|uitvaart|overlijdens|centraal beheer|interpolis|nn\b|a\.s\.r|asr|allianz|ing verzeker|univé|unive|ansvar|dela|monuta/],
+  ['belasting',/gemeente|belasting|waterschap|afval|rioolheffing|ozb|hondenbelasting|motorrijtuig|wegenbelasting|bsgr|cannock/],
+  ['boodsch',/boodschap|albert heijn|\bah\b|jumbo|lidl|aldi|plus\b|dirk|coop|vomar|hoogvliet|spar\b|ekoplaza|picnic|crisp|slager|bakker|markt|halal|turkse|toko/],
+  ['streaming',/netflix|spotify|disney|videoland|hbo|max\b|prime|youtube|apple|icloud|google one|dazn|ziggo sport|viaplay|audible|storytel|kobo|xbox|playstation|nintendo|chatgpt|claude|krant|volkskrant|telegraaf|\bnrc\b|\bad\b|tijdschrift|abonnement/],
+  ['sport',/sport|basic.?fit|fit ?for ?free|anytime|trainmore|sportcity|gym|fitness|zwem|voetbal|vereniging|contributie|yoga|boks/],
+  ['auto',/auto|lease|apk|garage|onderhoud auto|anwb|wegenwacht|parkeer|carwash|banden/],
+  ['brandstof',/tank|benzine|diesel|shell|\bbp\b|esso|total|tango|tinq|laadpas|opladen|fastned|ionity/],
+  ['ov',/\bns\b|\bov\b|ov-chip|ret\b|gvb|htm|arriva|connexxion|qbuzz|trein|bus\b|tram|metro|swapfiets/],
+  ['kinder',/kinder|opvang|bso|oppas|luier|kinderopvang|creche|speelgoed/],
+  ['onderwijs',/school|studie|duo|cursus|opleiding|bijles|koran|madrasa|boeken/],
+  ['zorg',/apotheek|tandarts|fysio|huisarts|ziekenhuis|bril|lenzen|medicijn|etos|kruidvat|drogist/],
+  ['uiteten',/thuisbezorgd|uber ?eats|deliveroo|flink|restaurant|mcdonald|burger|kfc|pizza|domino|shoarma|kebab|café|cafe|lunch|koffie|starbucks/],
+  ['kleding',/kleding|zara|h&m|primark|c&a|zalando|schoenen|nike|adidas|we fashion|only|jack/],
+  ['verzorging',/kapper|barbier|nagel|schoonheid|verzorging|parfum/],
+  ['huisdier',/dier|hond|kat\b|katten|dierenarts|brokken|pets|zooplus|jumper/],
+  ['vakantie',/vakantie|vlucht|ticket|hotel|booking|airbnb|transavia|ryanair|klm|corendon|tui|marokko|camping|pretpark|efteling|bioscoop|pathe|pathé/],
+  ['cadeau',/cadeau|verjaardag|bruiloft|kado|eid|suikerfeest|offerfeest/],
+  ['goeddoel',/moskee|zakat|sadaqa|goed doel|goede doel|unicef|kwf|rode kruis|islamic relief|donatie|gift/],
+  ['sparen',/spaar|beleg|pensioen|degiro|meesman|brand new day|bux|trade republic/],
+  ['lening',/lening|aflos|krediet|creditcard|klarna|in3|riverty|afterpay|duo aflos|schuld/]
+];
+function raadCat(naam){
+  var s=(naam||'').toLowerCase();
+  if(s.length<2)return '';
+  for(var i=0;i<HERKEN.length;i++)if(HERKEN[i][1].test(s))return HERKEN[i][0];
+  return '';
+}
+
+/* snel beginnen: dit hebben de meeste huishoudens */
+var VOORBEELDEN=[
+  {n:'Huur',c:'wonen',f:'maand'},{n:'Gas & stroom',c:'energie',f:'maand'},{n:'Water',c:'water',f:'maand'},
+  {n:'Zorgverzekering',c:'zorgverz',f:'maand'},{n:'Internet & tv',c:'internet',f:'maand'},{n:'Mobiel abonnement',c:'mobiel',f:'maand'},
+  {n:'Boodschappen',c:'boodsch',f:'week'},{n:'Inboedelverzekering',c:'verzek',f:'maand'},{n:'Aansprakelijkheid',c:'verzek',f:'jaar'},
+  {n:'Gemeentebelasting',c:'belasting',f:'jaar'},{n:'Waterschapsbelasting',c:'belasting',f:'jaar'},{n:'Netflix',c:'streaming',f:'maand'},
+  {n:'Spotify',c:'streaming',f:'maand'},{n:'Sportschool',c:'sport',f:'maand'},{n:'Autoverzekering',c:'auto',f:'maand'},
+  {n:'Wegenbelasting',c:'belasting',f:'kwartaal'},{n:'Tanken',c:'brandstof',f:'week'},{n:'Kinderopvang',c:'kinder',f:'maand'},
+  {n:'Moskee / goede doelen',c:'goeddoel',f:'maand'},{n:'Sparen',c:'sparen',f:'maand'}
+];
+
+var FREQS=[
+  {id:'week',    n:'Per week',      k:'per week',       f:52/12, d:7},
+  {id:'2week',   n:'Per 2 weken',   k:'per 2 weken',    f:26/12, d:14},
+  {id:'4week',   n:'Per 4 weken',   k:'per 4 weken',    f:13/12, d:28},
+  {id:'maand',   n:'Per maand',     k:'per maand',      f:1,     m:1},
+  {id:'kwartaal',n:'Per kwartaal',  k:'per kwartaal',   f:1/3,   m:3},
+  {id:'halfjaar',n:'Per half jaar', k:'per half jaar',  f:1/6,   m:6},
+  {id:'jaar',    n:'Per jaar',      k:'per jaar',       f:1/12,  m:12}
+];
+var FR={}; FREQS.forEach(function(f){FR[f.id]=f});
+var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+/* ───────────────────────────── opslag ───────────────────────────── */
+var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0}, posten:[], uitgaven:[],
+       tipsWeg:{}, hide:false, snaps:[], lastBackup:'', begonnen:false};
+var ui={tab:'overzicht', maand:'', sort:'cat', zoek:'', sheet:null, draft:null, catOpen:false,
+        msg:'', toonWeg:false};
+
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(!raw)return;
+    var d=JSON.parse(raw);
+    if(d&&typeof d==='object'){
+      if(d.hh)S.hh=Object.assign(S.hh,d.hh);
+      if(Array.isArray(d.posten))S.posten=d.posten;
+      if(Array.isArray(d.uitgaven))S.uitgaven=d.uitgaven;
+      if(d.tipsWeg)S.tipsWeg=d.tipsWeg;
+      S.hide=!!d.hide; S.begonnen=!!d.begonnen;
+      if(Array.isArray(d.snaps))S.snaps=d.snaps;
+      if(d.lastBackup)S.lastBackup=d.lastBackup;
+      if(d.tab)ui.tab=d.tab;
+    }
+  }catch(e){}
+}
+function save(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify({v:1,hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,
+      hide:S.hide,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab}));
+  }catch(e){ui.msg='Opslaan lukte niet: de opslag van de browser is vol of uitgezet.'}
+}
+/* één herstelpunt per dag, de laatste vijf blijven bewaard */
+function maakHerstelpunt(){
+  if(!S.posten.length&&!S.uitgaven.length)return;
+  var dag=today();
+  if(S.snaps.length&&S.snaps[0].dag===dag)return;
+  S.snaps.unshift({dag:dag,n:S.posten.length,u:S.uitgaven.length,data:backupTekst()});
+  S.snaps=S.snaps.slice(0,5);
+  save();
+}
+
+/* ───────────────────────────── hulpjes ───────────────────────────── */
+function pad(n){return (n<10?'0':'')+n}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function today(){return iso(new Date())}
+function dag(s){var p=String(s).split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function ym(s){return s.slice(0,7)}
+function maandNaam(k,kort){var p=k.split('-');var d=new Date(+p[0],+p[1]-1,1);
+  return kort?d.toLocaleDateString('nl-NL',{month:'short'}).replace('.',''):d.toLocaleDateString('nl-NL',{month:'long',year:'numeric'})}
+function schuifMaand(k,n){var p=k.split('-');var d=new Date(+p[0],+p[1]-1+n,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)}
+function datum(s,metJaar){if(!s)return '';var d=dag(s);
+  return d.toLocaleDateString('nl-NL',metJaar?{day:'numeric',month:'short',year:'numeric'}:{weekday:'short',day:'numeric',month:'short'})}
+function dagenTot(s){return Math.round((dag(s)-dag(today()))/86400000)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+var NF=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'});
+var NF0=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',maximumFractionDigits:0,minimumFractionDigits:0});
+function eur(v,rond){if(S.hide)return '€ ••••';var x=Math.round((v||0)*100)/100;return (rond?NF0:NF).format(x).replace(/ /g,' ')}
+function eurTekst(v){return (Math.round(v*100)/100).toFixed(2).replace('.',',')}
+function getal(s){
+  s=String(s||'').replace(/[€\s]/g,'');
+  if(!s)return NaN;
+  if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+  return parseFloat(s);
+}
+function personen(){return Math.max(1,(+S.hh.volw||0)+(+S.hh.kind||0))}
+function ico(cid,klein){var c=CAT[cid]||CAT.overig;return '<span class="ico'+(klein?' s':'')+'" style="background:'+c.c+'">'+svg(P[c.i])+'</span>'}
+
+/* ───────────────────────────── rekenen ───────────────────────────── */
+/* bedrag dat op een bepaalde dag gold: de laatste prijs van vóór die dag */
+function bedragOp(p,d){
+  var h=p.hist&&p.hist.length?p.hist:[{d:p.start||today(),b:p.bedrag}];
+  var b=h[0].b;
+  for(var i=0;i<h.length;i++)if(h[i].d<=d)b=h[i].b;
+  return b;
+}
+function perMaand(p){var f=(FR[p.freq]||FR.maand).f;if(p.freq==='maand'&&p.maanden&&p.maanden.length)f=p.maanden.length/12;return (p.bedrag||0)*f}
+function actief(p){return !p.gestopt||p.gestopt>today()}
+
+/* op welke dagen in maand k (JJJJ-MM) wordt deze post afgeschreven */
+function keren(p,k){
+  var f=FR[p.freq]||FR.maand; if(!p.start)return [];
+  var s=dag(p.start), y=+k.slice(0,4), m=+k.slice(5,7)-1, res=[];
+  var m0=new Date(y,m,1), m1=new Date(y,m+1,0);
+  if(f.d){
+    var diff=Math.round((m0-s)/86400000), n=diff>0?Math.ceil(diff/f.d):0;
+    var dd=new Date(s.getFullYear(),s.getMonth(),s.getDate()+n*f.d);
+    while(dd<=m1){ if(dd>=m0)res.push(iso(dd)); dd=new Date(dd.getFullYear(),dd.getMonth(),dd.getDate()+f.d); }
+  }else{
+    var md=(y*12+m)-(s.getFullYear()*12+s.getMonth());
+    if(p.freq==='maand'&&p.maanden&&p.maanden.length&&p.maanden.indexOf(m+1)<0)md=-1;
+    if(md>=0&&md%f.m===0)res.push(iso(new Date(y,m,Math.min(s.getDate(),m1.getDate()))));
+  }
+  return res.filter(function(d){return !p.gestopt||d<p.gestopt});
+}
+/* alles wat in een maand echt de deur uitgaat */
+function maandStaat(k){
+  var vast=[],los=[],tv=0,tl=0,perCat={};
+  S.posten.forEach(function(p){
+    keren(p,k).forEach(function(d){var b=bedragOp(p,d);vast.push({p:p,d:d,b:b});tv+=b;perCat[p.cat]=(perCat[p.cat]||0)+b});
+  });
+  S.uitgaven.forEach(function(u){if(ym(u.d)===k){los.push(u);tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b}});
+  vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+  los.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+  return {vast:vast,los:los,tv:tv,tl:tl,tot:tv+tl,perCat:perCat};
+}
+/* vaste lasten omgerekend naar een gemiddelde maand */
+function vastPerCat(){
+  var r={},tot=0;
+  S.posten.forEach(function(p){if(!actief(p))return;var v=perMaand(p);r[p.cat]=(r[p.cat]||0)+v;tot+=v});
+  return {r:r,tot:tot};
+}
+/* losse uitgaven: gemiddelde van de laatste drie hele maanden waarin je iets bijhield */
+function losGemiddeld(){
+  var r={},n=0,k=ym(today());
+  for(var i=1;i<=3;i++){
+    var mk=schuifMaand(k,-i),heeft=false;
+    S.uitgaven.forEach(function(u){if(ym(u.d)===mk){heeft=true;r[u.cat]=(r[u.cat]||0)+u.b}});
+    if(heeft)n++;
+  }
+  if(n){for(var c in r)r[c]/=n;return {r:r,n:n}}
+  S.uitgaven.forEach(function(u){if(ym(u.d)===k)r[u.cat]=(r[u.cat]||0)+u.b});
+  return {r:r,n:0};
+}
+function binnenkort(dagen){
+  var t=today(), eind=iso(new Date(Date.now()+dagen*86400000)), k=ym(t), out=[];
+  [k,schuifMaand(k,1)].forEach(function(mk){
+    S.posten.forEach(function(p){keren(p,mk).forEach(function(d){if(d>=t&&d<=eind)out.push({p:p,d:d,b:bedragOp(p,d)})})});
+  });
+  return out.sort(function(a,b){return a.d<b.d?-1:1});
+}
+function volgende(p){
+  var t=today(),k=ym(t);
+  for(var i=0;i<14;i++){var l=keren(p,schuifMaand(k,i)).filter(function(d){return d>=t});if(l.length)return l[0]}
+  return '';
+}
+
+/* ───────────────────────────── bespaartips ─────────────────────────────
+   Ruwe richtwaarden per maand voor een gewoon Nederlands huishouden. Het zijn
+   geen harde normen: ze zeggen alleen "hier zit je ruim boven, kijk eens". */
+function tips(){
+  var out=[], A=Math.max(1,+S.hh.volw||1), K=+S.hh.kind||0, Pn=A+K;
+  var vp=vastPerCat(), lg=losGemiddeld(), maand=new Date().getMonth();
+  function tot(c){return (vp.r[c]||0)+(lg.r[c]||0)}
+  function posten(c){return S.posten.filter(function(p){return p.cat===c&&actief(p)})}
+  function add(t){if(!S.tipsWeg[t.id])out.push(t);else if(ui.toonWeg){t.weg=true;out.push(t)}}
+  var L={
+    energie:[{l:'Gaslicht.com',u:'https://www.gaslicht.com'},{l:'Independer',u:'https://www.independer.nl/energie'}],
+    internet:[{l:'Bellen.com',u:'https://www.bellen.com/internet-tv/'}],
+    mobiel:[{l:'Bellen.com sim-only',u:'https://www.bellen.com/sim-only/'}],
+    zorg:[{l:'Zorgwijzer',u:'https://www.zorgwijzer.nl'},{l:'Independer',u:'https://www.independer.nl/zorgverzekering'}],
+    verzek:[{l:'Independer',u:'https://www.independer.nl'}],
+    toeslag:[{l:'Proefberekening toeslagen',u:'https://www.belastingdienst.nl/wps/wcm/connect/nl/toeslagen/content/hulpmiddel-proefberekening-toeslagen'}],
+    nibud:[{l:'Nibud',u:'https://www.nibud.nl'}]
+  };
+
+  /* energie */
+  var eRef=[0,105,140,160,180,195][Math.min(Pn,5)]+(S.hh.woning==='koop'?15:0), e=tot('energie');
+  if(e>eRef*1.15)add({id:'energie',cat:'energie',hoog:true,
+    t:'Gas en stroom zijn duurder dan gemiddeld',
+    x:'Je betaalt ongeveer '+eur(e,1)+' per maand. Voor '+Pn+(Pn===1?' persoon':' personen')+' ligt dat rond de '+eur(eRef,1)+'. Vergelijk leveranciers en kijk of een vast contract voor één of drie jaar goedkoper is. Kijk ook naar je termijnbedrag: is dat te hoog, dan leen je de leverancier geld dat je pas bij de jaarafrekening terugziet.',
+    s:(e-eRef)*12, l:L.energie});
+  if(posten('energie').length&&!posten('energie').some(function(p){return p.eind}))add({id:'energie-eind',cat:'energie',
+    t:'Wanneer loopt je energiecontract af?',
+    x:'Vul bij je energie de einddatum van je contract in. Twee maanden van tevoren waarschuwt de app, zodat je op tijd kunt vergelijken. Een contract dat afloopt wordt vaak omgezet naar een duurder variabel tarief.',s:0});
+
+  /* water */
+  var wRef=10+6*Pn, w=tot('water');
+  if(w>wRef*1.35)add({id:'water',cat:'water',
+    t:'Je waterrekening is aan de hoge kant',
+    x:'Van waterbedrijf wisselen kan niet, dat hangt aan je adres. Wel helpt een waterbesparende douchekop (een paar tientjes, en het scheelt ook gas) en korter douchen. Check ook of er niets lekt: een lopende wc kost al snel tientallen euro\'s per jaar.',
+    s:(w-wRef)*12});
+
+  /* internet */
+  var net=tot('internet');
+  if(net>55)add({id:'internet',cat:'internet',hoog:net>70,
+    t:'Internet en tv kan goedkoper',
+    x:'Je betaalt '+eur(net,1)+' per maand. Alleen internet, zonder tv-pakket, kost vaak €35 tot €45; tv kijk je dan via apps. Loopt je contract al een jaar? Bel je provider en zeg dat je wilt opzeggen: dan bieden ze vaak korting aan om je te houden.',
+    s:(net-45)*12, l:L.internet});
+
+  /* mobiel */
+  var duur=posten('mobiel').filter(function(p){return perMaand(p)>20});
+  if(duur.length){var sm=0;duur.forEach(function(p){sm+=perMaand(p)-12});
+    add({id:'mobiel',cat:'mobiel',hoog:true,
+      t:duur.length===1?duur[0].naam+' is een duur abonnement':duur.length+' dure telefoonabonnementen',
+      x:'Sim-only bij een budgetaanbieder kost vaak €8 tot €15 per maand voor ruim genoeg data. Heb je een toestel meegekregen en is dat al afbetaald? Dan betaal je dat nog steeds mee als je niets verandert. Zet het abonnement om naar sim-only of stap over; je nummer neem je mee.',
+      s:sm*12, l:L.mobiel});}
+
+  /* zorgverzekering */
+  var z=tot('zorgverz'), zRef=A*165;
+  if(z>A*190)add({id:'zorg',cat:'zorgverz',hoog:true,
+    t:'Je zorgverzekering is duur voor '+A+(A===1?' volwassene':' volwassenen'),
+    x:'Kinderen tot 18 zijn gratis meeverzekerd. Kijk welke aanvullende verzekering je echt gebruikt: veel mensen betalen voor tandarts of fysio die ze nauwelijks nodig hebben. Een basisverzekering met budgetpolis is vaak goedkoper, maar dan kies je minder vrij je zorgverlener.',
+    s:(z-zRef)*12, l:L.zorg});
+  if(maand>=10)add({id:'zorg-overstap-'+new Date().getFullYear(),cat:'zorgverz',hoog:true,
+    t:'Nu is het overstapseizoen voor je zorgverzekering',
+    x:'Opzeggen kan tot en met 31 december, en bij de nieuwe verzekeraar afsluiten tot 1 februari. De nieuwe verzekeraar zegt je oude meestal voor je op. De nieuwe premies zijn half november bekend.',s:0,l:L.zorg});
+  else if(maand>=8&&posten('zorgverz').length)add({id:'zorg-agenda-'+new Date().getFullYear(),cat:'zorgverz',
+    t:'Zet half november in je agenda',
+    x:'Dan maken de verzekeraars de premies voor volgend jaar bekend. Tot 31 december kun je opzeggen en overstappen.',s:0});
+
+  /* verzekeringen */
+  var vz=posten('verzek');
+  if(vz.length>=3)add({id:'verzek-dubbel',cat:'verzek',
+    t:'Loop je '+vz.length+' verzekeringen na op dubbele dekking',
+    x:'Veel gezien: een reisverzekering én een annulering via je creditcard, rechtsbijstand die je al via werk of vakbond hebt, of pechhulp die al bij je autoverzekering zit. Alles bij één verzekeraar onderbrengen geeft vaak pakketkorting.',
+    s:tot('verzek')*12*.1, l:L.verzek});
+  var maandBetaald=vz.concat(posten('auto')).filter(function(p){return p.freq==='maand'&&/verzek|polis|wa|allrisk|casco/i.test(p.naam+' '+(p.lev||''))||p.cat==='verzek'&&p.freq==='maand'});
+  if(maandBetaald.length>=2){var mb=0;maandBetaald.forEach(function(p){mb+=perMaand(p)});
+    add({id:'verzek-jaar',cat:'verzek',
+      t:'Per jaar betalen is soms goedkoper',
+      x:'Je betaalt '+maandBetaald.length+' verzekeringen per maand. Sommige verzekeraars rekenen een toeslag voor maandbetaling, of geven korting als je per jaar betaalt. Vraag het na bij de volgende verlenging.',
+      s:mb*12*.02});}
+  if(S.posten.some(function(p){return actief(p)&&/allrisk|all risk|casco/i.test(p.naam)}))add({id:'auto-wa',cat:'auto',
+    t:'Is allrisk nog nodig voor je auto?',
+    x:'Is je auto ouder dan een jaar of zes, of minder dan zo\'n €6.000 waard, dan is WA of WA-plus vaak genoeg. Het verschil in premie is dan meestal groter dan wat je bij schade terugkrijgt.',s:0,l:L.verzek});
+
+  /* boodschappen */
+  var bRef=A*290+K*190, b=tot('boodsch');
+  if(b>bRef*1.1)add({id:'boodsch',cat:'boodsch',hoog:b>bRef*1.3,
+    t:'Aan boodschappen geef je meer uit dan gemiddeld',
+    x:'Ongeveer '+eur(b,1)+' per maand, terwijl zo\'n huishouden het met ongeveer '+eur(bRef,1)+' redt. Wat het meeste scheelt: huismerk in plaats van A-merk, een weekmenu met een boodschappenlijst, één keer per week groot boodschappen doen, en de basis halen bij Lidl of Aldi. Dat scheelt al snel 15 tot 25 procent.',
+    s:(b-bRef)*12, l:L.nibud});
+  else if(!b&&S.posten.length>=3)add({id:'boodsch-bijhouden',cat:'boodsch',
+    t:'Houd je boodschappen een maand bij',
+    x:'Boodschappen zijn voor de meeste huishoudens de grootste post na de huur, en het bedrag waar je het makkelijkst op bespaart. Zet elke kassabon bij Uitgaven, of vul bij Vaste lasten een bedrag per week in. Daarna kan de app vergelijken.',s:0});
+
+  /* streaming */
+  var st=posten('streaming');
+  if(st.length>=2||tot('streaming')>25){
+    var max=0,som=0;st.forEach(function(p){var v=perMaand(p);som+=v;if(v>max)max=v});
+    add({id:'streaming',cat:'streaming',
+      t:st.length+' abonnementen voor streaming en meer',
+      x:'Samen '+eur(som)+' per maand. Neem er één tegelijk en wissel per maand: een serie kijk je toch achter elkaar uit. Kijk ook of er al een bij je internet- of mobiel abonnement zit, en of je een familie-account kunt delen binnen je huishouden.',
+      s:Math.max(0,som-max)*12*.7});
+  }
+  var maandAbo=S.posten.filter(function(p){return actief(p)&&p.freq==='maand'&&['streaming','sport','overig'].indexOf(p.cat)>=0});
+  if(maandAbo.length>=6)add({id:'abo-na',cat:'overig',
+    t:'Je hebt '+maandAbo.length+' kleine maandabonnementen',
+    x:'Die tikken ongemerkt aan. Loop ze één voor één langs: gebruik ik dit elke week? Zo niet, zeg op. Opzeggen kan sinds 2023 ook online met een opzegknop.',s:0});
+
+  /* sport */
+  var sp=tot('sport');
+  if(sp>Pn*35)add({id:'sport',cat:'sport',
+    t:'Sporten kan goedkoper',
+    x:'Je betaalt '+eur(sp,1)+' per maand. Budgetsportscholen zitten rond €20 tot €30. Ga je minder dan één keer per week, dan is een strippenkaart of losse les vaak goedkoper dan een abonnement.',
+    s:(sp-Pn*25)*12});
+
+  /* uit eten */
+  var ue=tot('uiteten');
+  if(ue>Pn*60)add({id:'uiteten',cat:'uiteten',
+    t:'Veel geld naar bezorgen en uit eten',
+    x:'Ongeveer '+eur(ue,1)+' per maand. Bezorgen is de duurste manier van eten: je betaalt bezorgkosten, servicekosten en een hogere prijs. Kook een paar keer per week dubbel en vries de helft in, dan heb je op drukke avonden ook iets snels.',
+    s:(ue-Pn*60)*12*.5});
+
+  /* brandstof */
+  var bs=tot('brandstof');
+  if(bs>150)add({id:'brandstof',cat:'brandstof',
+    t:'Tanken: een paar kleine dingen schelen veel',
+    x:'Tank niet langs de snelweg, dat is vaak 15 tot 25 cent per liter duurder. Een app met de goedkoopste pomp in de buurt helpt. Houd je banden op spanning en rijd op de snelweg 100 in plaats van 130.',
+    s:bs*12*.08});
+
+  /* leningen */
+  var le=posten('lening');
+  if(le.length)add({id:'lening',cat:'lening',hoog:true,
+    t:'Los de duurste lening als eerste af',
+    x:'Heb je meerdere leningen, betaal dan het minimum op alles en de rest op die met de hoogste rente. Rood staan, een creditcard en achteraf betalen zijn het duurst. Kom je er niet uit? Bij het Geldloket of de schuldhulp van je gemeente is hulp gratis.',
+    s:0, l:[{l:'Geldfit',u:'https://www.geldfit.nl'}]});
+
+  /* contracten die aflopen */
+  S.posten.forEach(function(p){
+    if(!actief(p)||!p.eind)return;
+    var n=dagenTot(p.eind);
+    if(n<=60&&n>=-30)add({id:'eind-'+p.id+'-'+p.eind,cat:p.cat,hoog:true,post:p.id,
+      t:n<0?'Het contract van '+p.naam+' is afgelopen':'Het contract van '+p.naam+' loopt '+(n===0?'vandaag':'over '+n+' dagen')+' af',
+      x:'Vergelijk nu, en zeg op tijd op als je iets beters vindt. Doe je niets, dan loopt het meestal gewoon door, vaak tegen een hoger tarief. Vraag je huidige '+(p.lev||'leverancier')+' ook wat ze je bieden om te blijven.',
+      s:perMaand(p)*12*.1, l:L[{energie:'energie',internet:'internet',mobiel:'mobiel',zorgverz:'zorg',verzek:'verzek'}[p.cat]]});
+  });
+
+  /* duurder geworden */
+  S.posten.forEach(function(p){
+    if(!actief(p)||!p.hist||p.hist.length<2)return;
+    var eerst=p.hist[0].b, nu=p.bedrag;
+    if(eerst>0&&nu>eerst*1.08)add({id:'duurder-'+p.id+'-'+nu,cat:p.cat,post:p.id,
+      t:p.naam+' is '+Math.round((nu/eerst-1)*100)+'% duurder geworden',
+      x:'Van '+eur(eerst)+' naar '+eur(nu)+' '+FR[p.freq].k+', sinds '+datum(p.hist[0].d,1)+'. Een prijsverhoging geeft je vaak het recht om meteen op te zeggen. Bel en vraag om een beter aanbod, of kijk wat het elders kost.',
+      s:(nu-eerst)*FR[p.freq].f*12});
+  });
+
+  /* inkomen */
+  var ink=+S.hh.inkomen||0;
+  if(ink>0){
+    var deel=vp.tot/ink;
+    if(deel>.6)add({id:'deel-hoog',cat:'wonen',hoog:true,
+      t:'Je vaste lasten zijn '+Math.round(deel*100)+'% van je inkomen',
+      x:'Blijft er na je vaste lasten weinig over, dan is elke onverwachte rekening een probleem. Begin bij de grootste posten hierboven. Het Nibud heeft een gratis budgetplanner als je samen met iemand wilt kijken.',s:0,l:L.nibud});
+    var grens=A>1?4300:3300;
+    if(ink<grens)add({id:'toeslagen',cat:'belasting',hoog:true,
+      t:'Check of je recht hebt op toeslagen',
+      x:'Met dit inkomen heb je mogelijk recht op zorgtoeslag'+(S.hh.woning==='huur'?', huurtoeslag':'')+(K?' of kindgebonden budget':'')+'. Dat hangt ook af van je vermogen en je precieze inkomen, dus doe even de proefberekening. Bij een laag inkomen kun je bij je gemeente ook kwijtschelding van gemeentebelasting aanvragen.',
+      s:0,l:L.toeslag});
+    if(!tot('sparen')&&vp.tot<ink*.9)add({id:'sparen',cat:'sparen',
+      t:'Betaal jezelf eerst',
+      x:'Zet een automatische spaaropdracht op de dag na je salaris. Wat je niet ziet, geef je niet uit. Zelfs €25 per maand is €300 per jaar, en een buffer voorkomt dat je moet lenen als de wasmachine kapotgaat.',s:0});
+  }
+
+  /* staat er voor dezelfde soort al een tip met een besparing, dan telt de
+     prijsstijging niet nog een keer mee in het totaal */
+  out.forEach(function(t){
+    if(t.id.indexOf('duurder-')===0&&out.some(function(o){return o!==t&&o.cat===t.cat&&o.id.indexOf('duurder-')!==0&&o.s>0}))t.s=0;
+  });
+  out.forEach(function(t){t.s=Math.max(0,Math.round(t.s||0))});
+  out.sort(function(a,b){return (b.weg?-1:0)-(a.weg?-1:0)||(b.s-a.s)||((b.hoog?1:0)-(a.hoog?1:0))});
+  return out;
+}
+
+/* ───────────────────────────── tekenen ───────────────────────────── */
+var TABS=[{id:'overzicht',n:'Overzicht',i:'overzicht'},{id:'vast',n:'Vaste lasten',i:'herhaal'},
+          {id:'uitgaven',n:'Uitgaven',i:'bon'},{id:'besparen',n:'Besparen',i:'lamp'}];
+
+function render(){
+  var h='<header class="top"><div class="top-in"><div><div class="title">Huishoudboek</div>'
+    + '<div class="sub">'+esc(S.hh.volw)+(+S.hh.volw===1?' volwassene':' volwassenen')+(+S.hh.kind?' · '+S.hh.kind+(+S.hh.kind===1?' kind':' kinderen'):'')+' · v'+VERSIE+'</div></div>'
+    + '<div class="knoppen"><button class="icon-btn'+(S.hide?' on':'')+'" data-act="hide" aria-label="Bedragen verbergen">'+svg(P[S.hide?'oogdicht':'oog'])+'</button>'
+    + '<button class="icon-btn" data-act="instellingen" aria-label="Instellingen">'+svg(P.tandwiel)+'</button></div></div></header>';
+  h+='<main class="wrap">';
+  if(ui.msg){h+='<div class="flash">'+esc(ui.msg)+'</div>';ui.msg=''}
+  h+=({overzicht:vOverzicht,vast:vVast,uitgaven:vUitgaven,besparen:vBesparen}[ui.tab]||vOverzicht)();
+  h+='</main>';
+  if(ui.tab==='vast'||ui.tab==='uitgaven'||ui.tab==='overzicht')
+    h+='<button class="fab" data-act="'+(ui.tab==='uitgaven'?'nieuwlos':'nieuwpost')+'" aria-label="Toevoegen">'+svg(P.plus)+'</button>';
+  var nt=tips().filter(function(t){return t.hoog}).length;
+  h+='<nav class="nav"><div class="nav-in">';
+  TABS.forEach(function(t){
+    h+='<button class="'+(ui.tab===t.id?'on':'')+'" data-act="tab" data-v="'+t.id+'"><span class="ic">'+svg(P[t.i])
+      + (t.id==='besparen'&&nt?'<span class="badge">'+nt+'</span>':'')+'</span>'+t.n+'</button>';
+  });
+  h+='</div></nav>';
+  document.getElementById('app').innerHTML=h;
+}
+
+function backupMelding(){
+  if(!S.posten.length&&!S.uitgaven.length)return '';
+  var n=S.lastBackup?-dagenTot(S.lastBackup):999;
+  if(n<14)return '';
+  return '<div class="melding"><div>'+(S.lastBackup?'Je laatste back-up is van '+n+' dagen geleden.':'Je hebt nog nooit een back-up gemaakt.')+'</div>'
+    + '<button data-act="bkdeel">Nu maken</button></div>';
+}
+
+function huishoudenBlok(){
+  return '<div class="stepper"><span class="sl">Volwassenen</span><span class="sc"><button data-act="hh" data-k="volw" data-d="-1">−</button><span class="sn">'+S.hh.volw+'</span><button data-act="hh" data-k="volw" data-d="1">+</button></span></div>'
+    + '<div class="stepper"><span class="sl">Kinderen</span><span class="sc"><button data-act="hh" data-k="kind" data-d="-1">−</button><span class="sn">'+S.hh.kind+'</span><button data-act="hh" data-k="kind" data-d="1">+</button></span></div>'
+    + '<div class="label">Woning</div><div class="chips">'
+    + ['huur','koop'].map(function(w){return '<button class="chip'+(S.hh.woning===w?' on':'')+'" data-act="woning" data-v="'+w+'">'+(w==='huur'?'Huurhuis':'Koophuis')+'</button>'}).join('')
+    + '</div>';
+}
+
+function vOverzicht(){
+  var h=backupMelding();
+  if(!S.posten.length&&!S.uitgaven.length){
+    h+='<div class="hero"><div class="k">Welkom</div><div style="font-size:22px;font-weight:700;margin-top:8px;line-height:1.25">Wat kost jouw huishouden per maand?</div>'
+      + '<div class="note" style="font-size:14px">Zet je vaste lasten erin, zoals huur, energie en abonnementen. Per week, per maand of per jaar: de app rekent alles om. Daarna zie je waar je geld heen gaat en waar je kunt besparen.</div></div>';
+    h+='<div class="h2"><h2>Met hoeveel zijn jullie?</h2></div>'+huishoudenBlok();
+    h+='<div class="h2"><h2>Snel beginnen</h2><span class="r">tik om toe te voegen</span></div><div class="chips">';
+    VOORBEELDEN.forEach(function(v,i){h+='<button class="chip voorbeeld" data-act="voorbeeld" data-i="'+i+'">'+ico(v.c,1)+esc(v.n)+'</button>'});
+    h+='</div>';
+    return h;
+  }
+  var vp=vastPerCat(), k=ym(today()), ms=maandStaat(k), t=today(), pp=personen();
+  var afgeschreven=0,komtNog=0;
+  ms.vast.forEach(function(v){if(v.d<=t)afgeschreven+=v.b;else komtNog+=v.b});
+  h+='<div class="hero"><div class="k">Vaste lasten per maand</div><div class="v">'+eur(vp.tot)+'</div>'
+    + '<div class="s"><span><b>'+eur(vp.tot*12,1)+'</b> per jaar</span><span><b>'+eur(vp.tot*12/52)+'</b> per week</span>'
+    + (pp>1?'<span><b>'+eur(vp.tot/pp)+'</b> per persoon</span>':'')+'</div>';
+  var ink=+S.hh.inkomen||0;
+  if(ink>0){
+    var deel=vp.tot/ink, cls=deel>.75?' te':deel>.55?' warn':'';
+    h+='<div class="meter'+cls+'"><i style="width:'+Math.min(100,deel*100).toFixed(1)+'%"></i></div>'
+      + '<div class="meterlab"><span>'+Math.round(deel*100)+'% van je inkomen</span><span>over: <b class="mono" style="color:var(--sand)">'+eur(ink-vp.tot)+'</b></span></div>';
+  }
+  h+='</div>';
+  h+='<div class="kpis"><button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">'+esc(maandNaam(k,1))+' tot nu</div><div class="v">'+eur(afgeschreven+ms.tl,1)+'</div></button>'
+    + '<button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">Komt nog deze maand</div><div class="v">'+eur(komtNog,1)+'</div></button>'
+    + '<button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">Losse uitgaven</div><div class="v">'+eur(ms.tl,1)+'</div></button></div>';
+
+  var tl=tips(), som=0; tl.forEach(function(x){if(!x.weg)som+=x.s});
+  if(tl.length){var top=tl[0];
+    h+='<button class="toptip" data-act="tab" data-v="besparen">'+ico(top.cat)+'<div class="t"><div class="k">'+(som?'Mogelijk '+eur(som,1)+' per jaar te besparen':'Tip')+'</div><div class="n">'+esc(top.t)+'</div></div>'
+      + '<span class="dim">'+svg(P.rechts).replace('<svg','<svg width="20" height="20"')+'</span></button>';
+  }
+
+  var bk=binnenkort(14);
+  h+='<div class="h2"><h2>De komende twee weken</h2><span class="r">'+eur(bk.reduce(function(a,x){return a+x.b},0))+'</span></div>';
+  if(!bk.length)h+='<div class="card"><div class="leeg">Geen afschrijvingen in de komende twee weken.</div></div>';
+  else{h+='<div class="card">';
+    bk.slice(0,6).forEach(function(x){
+      var n=dagenTot(x.d);
+      h+='<button class="rij" data-act="post" data-id="'+x.p.id+'">'+ico(x.p.cat)+'<div class="t"><div class="n">'+esc(x.p.naam)+'</div><div class="m">'+(n===0?'vandaag':n===1?'morgen':esc(datum(x.d)))+'</div></div>'
+        + '<div class="b"><div class="a">'+eur(x.b)+'</div></div></button>';
+    });
+    if(bk.length>6)h+='<button class="rij" data-act="tab" data-v="uitgaven"><div class="t"><div class="m" style="color:var(--accent);font-weight:600">nog '+(bk.length-6)+' meer bekijken</div></div></button>';
+    h+='</div>';}
+
+  var rij=Object.keys(vp.r).map(function(c){return {c:c,v:vp.r[c]}}).sort(function(a,b){return b.v-a.v});
+  if(rij.length){
+    h+='<div class="h2"><h2>Waar het heen gaat</h2><span class="r">vaste lasten per maand</span></div><div class="card bars">';
+    var max=rij[0].v;
+    rij.forEach(function(x){
+      h+='<button class="bar" data-act="catvast" data-v="'+x.c+'">'+ico(x.c,1)+'<span class="nm">'+esc(CAT[x.c].n)+'</span>'
+        + '<span class="am">'+eur(x.v,1)+'<span class="pc">'+Math.round(x.v/vp.tot*100)+'%</span></span>'
+        + '<span class="tr"><i style="width:'+(x.v/max*100).toFixed(1)+'%"></i></span></button>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+function postRij(p){
+  if(ui.opruim)return '<div class="rij'+(actief(p)?'':' uit')+'">'+ico(p.cat)+'<div class="t"><div class="n">'+esc(p.naam)+'</div><div class="m">'+eur(p.bedrag)+' '+esc((FR[p.freq]||FR.maand).k)+'</div></div>'
+    + '<button class="weg" data-act="snelweg" data-id="'+p.id+'" aria-label="Verwijderen">'+svg(P.prul)+'</button></div>';
+  var f=FR[p.freq]||FR.maand, uit=!actief(p), nv=uit?'':volgende(p);
+  var stijg=p.hist&&p.hist.length>1&&p.bedrag>p.hist[p.hist.length-2].b;
+  var meta=[p.lev,p.freq==='maand'&&p.maanden&&p.maanden.length?p.maanden.length+'× per jaar':f.k].filter(Boolean).join(' · ');
+  return '<button class="rij'+(uit?' uit':'')+'" data-act="post" data-id="'+p.id+'">'+ico(p.cat)
+    + '<div class="t"><div class="n">'+esc(p.naam)+(uit?'<span class="tag stop">opgezegd</span>':'')+'</div><div class="m">'+esc(meta)+(nv?' · '+esc(dagenTot(nv)>300?datum(nv,1):datum(nv)):'')+'</div></div>'
+    + '<div class="b"><div class="a'+(stijg?' up':'')+'">'+(stijg?'<span aria-label="duurder geworden">▲ </span>':'')+eur(p.bedrag)+'</div>'
+    + (p.freq!=='maand'||p.maanden&&p.maanden.length?'<div class="p">≈ '+eur(perMaand(p))+' p/m</div>':'<div class="p">&nbsp;</div>')+'</div></button>';
+}
+
+function vVast(){
+  var h='';
+  var vp=vastPerCat();
+  h+='<div class="zoekrij"><input class="search" id="zoek" placeholder="Zoek op naam of leverancier" value="'+esc(ui.zoek)+'">'
+    + '<button class="icon-btn'+(ui.opruim?' on':'')+'" data-act="opruim" aria-label="Opruimen" title="Opruimen">'+svg(P.prul)+'</button>'
+    + '<button class="icon-btn" data-act="sort" aria-label="Sorteren" title="Sorteren" style="width:auto;padding:0 12px;font-size:12.5px;font-weight:600">'+(ui.sort==='cat'?'Soort':'Duurste')+'</button></div>';
+  if(!S.posten.length){
+    h+='<div class="card" style="margin-top:14px"><div class="leeg">Nog geen vaste lasten. Tik op + of kies er hieronder een paar.</div></div>';
+    h+='<div class="h2"><h2>Snel beginnen</h2></div><div class="chips">';
+    VOORBEELDEN.forEach(function(v,i){h+='<button class="chip voorbeeld" data-act="voorbeeld" data-i="'+i+'">'+ico(v.c,1)+esc(v.n)+'</button>'});
+    return h+'</div>';
+  }
+  if(ui.opruim)h+='<div class="melding" style="border-color:var(--clay)"><div>Tik op de prullenbak om iets weg te halen, bijvoorbeeld iets wat eenmalig was.</div><button data-act="opruim" style="background:var(--sand)">Klaar</button></div>';
+  if(ui.ongedaan)h+='<div class="melding"><div>'+esc(ui.ongedaan.p.naam)+' is weggehaald.</div><button data-act="ongedaan">Ongedaan maken</button></div>';
+  var z=ui.zoek.toLowerCase().trim();
+  var lijst=S.posten.filter(function(p){return !z||(p.naam+' '+(p.lev||'')+' '+CAT[p.cat].n).toLowerCase().indexOf(z)>=0});
+  var aan=lijst.filter(actief), uit=lijst.filter(function(p){return !actief(p)});
+  h+='<div class="groep" style="margin-top:16px"><span>'+aan.length+' vaste lasten</span><span>'+eur(vp.tot)+' p/m</span></div>';
+  if(ui.sort==='duur'){
+    aan.sort(function(a,b){return perMaand(b)-perMaand(a)});
+    h+='<div class="card">'+aan.map(postRij).join('')+'</div>';
+  }else{
+    CATS.forEach(function(c){
+      var g=aan.filter(function(p){return p.cat===c.id});
+      if(!g.length)return;
+      g.sort(function(a,b){return perMaand(b)-perMaand(a)});
+      var s=0;g.forEach(function(p){s+=perMaand(p)});
+      h+='<div class="groep" id="g-'+c.id+'"><span>'+esc(c.n)+'</span><span>'+eur(s)+' p/m</span></div><div class="card">'+g.map(postRij).join('')+'</div>';
+    });
+  }
+  if(uit.length)h+='<div class="groep"><span>Opgezegd</span><span></span></div><div class="card">'+uit.map(postRij).join('')+'</div>';
+  if(!lijst.length)h+='<div class="card"><div class="leeg">Niets gevonden.</div></div>';
+  return h;
+}
+
+function vUitgaven(){
+  var k=ui.maand||ym(today()), ms=maandStaat(k), t=today(), h='';
+  /* zes maanden naast elkaar, de gekozen maand in het midden van je blik */
+  var kols=[],max=1;
+  var cur=ym(today()), eindM=(k>cur||k<schuifMaand(cur,-5))?k:cur;
+  for(var i=5;i>=0;i--){var mk=schuifMaand(eindM,-i);
+    var st=maandStaat(mk);kols.push({k:mk,v:st.tv,l:st.tl});if(st.tot>max)max=st.tot}
+  h+='<div class="mnav"><button class="icon-btn" data-act="maand" data-d="-1" aria-label="Vorige maand">'+svg(P.links)+'</button>'
+    + '<div class="mn">'+esc(maandNaam(k))+'</div>'
+    + '<button class="icon-btn" data-act="maand" data-d="1" aria-label="Volgende maand">'+svg(P.rechts)+'</button></div>';
+  h+='<div class="drie"><div class="kpi"><div class="k">Vaste lasten</div><div class="v">'+eur(ms.tv,1)+'</div></div>'
+    + '<div class="kpi"><div class="k">Losse uitgaven</div><div class="v">'+eur(ms.tl,1)+'</div></div>'
+    + '<div class="kpi"><div class="k">Totaal</div><div class="v">'+eur(ms.tot,1)+'</div></div></div>';
+
+  h+='<div class="card chart" style="margin-top:10px" role="img" aria-label="Uitgaven per maand, laatste zes maanden"><div class="cols">';
+  kols.forEach(function(c){
+    var tot=c.v+c.l, hv=c.v/max*100, hl=c.l/max*100;
+    h+='<button class="col'+(c.k===k?'':' dimmed')+'" data-act="kiesmaand" data-v="'+c.k+'" title="'+esc(maandNaam(c.k))+': vast '+esc(eur(c.v))+', los '+esc(eur(c.l))+'">'
+      + '<span class="tot">'+(tot?eur(tot,1).replace('€ ','€'):'')+'</span><span class="stk" style="height:calc(100% - 18px)">'
+      + (c.l?'<span class="sl" style="height:'+hl.toFixed(1)+'%"></span>':'')
+      + (c.v?'<span class="sv" style="height:'+hv.toFixed(1)+'%"></span>':'')+'</span></button>';
+  });
+  h+='</div><div class="colx">'+kols.map(function(c){return '<span class="'+(c.k===k?'on':'')+'">'+esc(maandNaam(c.k,1))+'</span>'}).join('')+'</div>'
+    + '<div class="legend"><span><i style="background:var(--accent)"></i>Vaste lasten</span><span><i style="background:var(--accent2)"></i>Losse uitgaven</span></div></div>';
+
+  var rij=Object.keys(ms.perCat).map(function(c){return {c:c,v:ms.perCat[c]}}).sort(function(a,b){return b.v-a.v});
+  if(rij.length){
+    h+='<div class="h2"><h2>Per soort</h2><span class="r">'+esc(maandNaam(k))+'</span></div><div class="card bars">';
+    rij.forEach(function(x){
+      h+='<div class="bar">'+ico(x.c,1)+'<span class="nm">'+esc(CAT[x.c].n)+'</span><span class="am">'+eur(x.v,1)+'<span class="pc">'+Math.round(x.v/ms.tot*100)+'%</span></span>'
+        + '<span class="tr"><i style="width:'+(x.v/rij[0].v*100).toFixed(1)+'%"></i></span></div>';
+    });
+    h+='</div>';
+  }
+
+  h+='<div class="h2"><h2>Losse uitgaven</h2><button class="r" data-act="nieuwlos">+ toevoegen</button></div>';
+  if(!ms.los.length)h+='<div class="card"><div class="leeg">Nog niets deze maand. Boodschappen, tanken, uit eten: tik op + en vul het bedrag in.</div></div>';
+  else{
+    h+='<div class="card">';
+    ms.los.forEach(function(u){
+      h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+(u.oms?' · '+esc(CAT[u.cat].n):'')+'</div></div>'
+        + '<div class="b"><div class="a">'+eur(u.b)+'</div></div></button>';
+    });
+    h+='</div>';
+  }
+
+  h+='<div class="h2"><h2>Vaste lasten deze maand</h2><span class="r">'+ms.vast.length+'×</span></div>';
+  if(!ms.vast.length)h+='<div class="card"><div class="leeg">Geen vaste lasten in deze maand.</div></div>';
+  else{
+    h+='<div class="card">';
+    ms.vast.forEach(function(x){
+      var af=x.d<=t;
+      h+='<button class="rij" data-act="post" data-id="'+x.p.id+'">'+ico(x.p.cat)+'<div class="t"><div class="n">'+esc(x.p.naam)+'</div><div class="m">'+esc(datum(x.d))+'<span class="tag '+(af?'af">afgeschreven':'nog">komt nog')+'</span></div></div>'
+        + '<div class="b"><div class="a">'+eur(x.b)+'</div></div></button>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+function vBesparen(){
+  var tl=tips(), som=0, h='';
+  tl.forEach(function(t){if(!t.weg)som+=t.s});
+  h+='<div class="bespaar"><div class="k">Wat je misschien kunt besparen</div><div class="v">'+(som?eur(som,1)+' <span style="font-size:15px;color:var(--dim);font-family:var(--sans);font-weight:500">per jaar</span>':'Nog niets gevonden')+'</div>'
+    + '<div class="s">Een ruwe schatting. De app vergelijkt wat je betaalt met wat een gewoon huishouden van '+personen()+(personen()===1?' persoon':' personen')+' ongeveer kwijt is, en kijkt naar contracten die aflopen en prijzen die stijgen.</div>'
+    + '<div class="chips" style="margin-top:12px"><button class="chip" data-act="instellingen">'+esc(S.hh.volw)+' volw. · '+esc(S.hh.kind)+' kind. · '+(S.hh.woning==='koop'?'koop':'huur')+(+S.hh.inkomen?' · inkomen '+eur(S.hh.inkomen,1):'')+' — wijzig</button></div></div>';
+  if(!(+S.hh.inkomen))h+='<div class="note" style="margin:10px 4px 0">Vul in de instellingen je netto inkomen per maand in, dan kijkt de app ook naar toeslagen en wat er overblijft.</div>';
+  if(!tl.length){
+    h+='<div class="card" style="margin-top:14px"><div class="leeg">'+(S.posten.length<3?'Zet eerst een paar vaste lasten in de app, dan zoekt hij mee.':'Je zit overal rond of onder het gemiddelde. Netjes.')+'</div></div>';
+  }
+  tl.forEach(function(t){
+    h+='<div class="tip'+(t.hoog?' hoog':'')+'"'+(t.weg?' style="opacity:.55"':'')+'><div class="th">'+ico(t.cat)+'<div><div class="tt">'+esc(t.t)+'</div>'
+      + (t.s?'<span class="sv">± '+eur(t.s,1)+' per jaar</span>':'')+'</div></div>'
+      + '<div class="tx">'+esc(t.x)+'</div><div class="ta">';
+    (t.l||[]).forEach(function(l){h+='<a href="'+esc(l.u)+'" target="_blank" rel="noopener">'+esc(l.l)+' ↗</a>'});
+    if(t.post)h+='<button data-act="post" data-id="'+t.post+'">Bekijk</button>';
+    h+=t.weg?'<button data-act="tipterug" data-id="'+esc(t.id)+'">Terughalen</button>':'<button data-act="tipweg" data-id="'+esc(t.id)+'">Gedaan / verberg</button>';
+    h+='</div></div>';
+  });
+  var nWeg=Object.keys(S.tipsWeg).length;
+  if(nWeg)h+='<button class="btn outline klein" data-act="toonweg">'+(ui.toonWeg?'Verborgen tips weer wegstoppen':nWeg+' verborgen tip'+(nWeg===1?'':'s')+' tonen')+'</button>';
+  h+='<div class="note" style="margin:16px 4px 0">De richtwaarden zijn afgerond en bedoeld als duwtje, niet als norm. Prijzen van leveranciers veranderen vaak; vergelijk altijd zelf voordat je overstapt.</div>';
+  return h;
+}
+
+/* ───────────────────────────── onderbladen ───────────────────────────── */
+var bladGeduwd=false;
+function openSheet(html){
+  var el=document.getElementById('sheet');
+  el.innerHTML='<div class="sheet-in"><div class="grip"></div>'+html+'</div>';
+  el.classList.add('open'); document.getElementById('sheetbg').classList.add('open');
+  if(!bladGeduwd){history.pushState({blad:1},'');bladGeduwd=true}
+}
+function hideSheet(){
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('sheetbg').classList.remove('open');
+  ui.sheet=null; ui.draft=null; ui.catOpen=false;
+}
+function closeSheet(){if(bladGeduwd){bladGeduwd=false;history.back()}hideSheet()}
+window.addEventListener('popstate',function(){
+  if(document.getElementById('vraag').innerHTML){document.getElementById('vraag').innerHTML='';history.pushState({blad:1},'');return}
+  bladGeduwd=false; if(ui.sheet)hideSheet();
+});
+function kop(t){return '<div class="shead"><h3>'+esc(t)+'</h3><button class="x" data-act="close" aria-label="Sluiten">'+svg(P.kruis)+'</button></div>'}
+
+function catKiezer(sel,volgorde){
+  var h='<button class="catkeus" data-act="catopen">'+ico(sel)+'<span class="t">'+esc(CAT[sel].n)+'</span><span class="w">'+(ui.catOpen?'klaar':'wijzig')+'</span></button>';
+  if(ui.catOpen){
+    var lijst=volgorde?volgorde.concat(CATS.map(function(c){return c.id}).filter(function(i){return volgorde.indexOf(i)<0})):CATS.map(function(c){return c.id});
+    h+='<div class="catgrid">'+lijst.map(function(id){return '<button class="'+(id===sel?'on':'')+'" data-act="catkies" data-v="'+id+'">'+ico(id)+'<span>'+esc(CAT[id].n)+'</span></button>'}).join('')+'</div>';
+  }
+  return h;
+}
+
+function postForm(){
+  var d=ui.draft, nieuw=!d.id, h=kop(nieuw?'Nieuwe vaste last':'Vaste last');
+  h+='<div class="label">Wat is het?</div><input class="field" id="f_naam" placeholder="Bijvoorbeeld: Vattenfall, huur, Netflix" value="'+esc(d.naam)+'" autocomplete="off">';
+  h+='<div class="label">Bedrag</div><div class="eur groot"><input class="field groot" id="f_bedrag" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'" autocomplete="off"></div>';
+  h+='<div class="label">Hoe vaak?</div><div class="chips">'+FREQS.map(function(f){return '<button class="chip'+(d.freq===f.id?' on':'')+'" data-act="freq" data-v="'+f.id+'">'+f.n+'</button>'}).join('')+'</div>';
+  if(d.freq==='maand'){
+    h+='<div class="chips" style="margin-top:10px"><button class="chip'+(d.maanden?'':' on')+'" data-act="maandenuit">Elke maand</button><button class="chip'+(d.maanden?' on':'')+'" data-act="maandenaan">Alleen in sommige maanden</button></div>';
+    if(d.maanden)h+='<div class="chips" style="margin-top:8px">'+MND.map(function(n,i){return '<button class="chip'+(d.maanden.indexOf(i+1)>=0?' on':'')+'" data-act="mndkies" data-v="'+(i+1)+'" style="min-width:52px">'+n+'</button>'}).join('')+'</div>'
+      + '<div class="note">Bijvoorbeeld gemeentebelasting in tien termijnen, maart tot en met december.</div>';
+  }
+  h+='<div class="omrek" id="f_omrek">'+omrekTekst()+'</div>';
+  h+='<div class="label">Soort</div>'+catKiezer(d.cat);
+  h+='<div class="twee"><div><div class="label">Een dag van afschrijven</div><input class="field" type="date" id="f_start" value="'+esc(d.start)+'"></div>'
+    + '<div><div class="label">Contract loopt af</div><input class="field" type="date" id="f_eind" value="'+esc(d.eind||'')+'"></div></div>';
+  h+='<div class="note">Een datum waarop het werd of wordt afgeschreven, mag een oude zijn. Vanaf die dag rekent de app verder. Met een einddatum waarschuwt de app twee maanden van tevoren.</div>';
+  h+='<div class="label">Leverancier (mag leeg)</div><input class="field" id="f_lev" placeholder="Bijvoorbeeld: Eneco, Ziggo" value="'+esc(d.lev||'')+'" autocomplete="off">';
+  h+='<div class="label">Notitie</div><textarea class="field" id="f_not" placeholder="Klantnummer, wat er in zit, wanneer opzeggen…">'+esc(d.notitie||'')+'</textarea>';
+  if(!nieuw){
+    var p=S.posten.filter(function(x){return x.id===d.id})[0];
+    if(p&&p.hist&&p.hist.length>1){
+      h+='<div class="label">Prijs door de tijd</div><div class="hist">';
+      p.hist.forEach(function(x,i){
+        var vorig=i?p.hist[i-1].b:0, pc=vorig?Math.round((x.b/vorig-1)*100):0;
+        h+='<div><span>'+esc(datum(x.d,1))+'</span><span><span class="mono">'+eur(x.b)+'</span>'+(i?' <span class="'+(pc>0?'up':'dim')+'">'+(pc>0?'+':'')+pc+'%</span>':'')+'</span></div>';
+      });
+      h+='</div>';
+    }
+    h+='<div class="label">Opgezegd</div><button class="schakel'+(d.gestopt?' on':'')+'" data-act="stoptoggle"><span>'+(d.gestopt?'Opgezegd per '+esc(datum(d.gestopt,1)):'Loopt nog')+'</span><i></i></button>';
+    if(d.gestopt)h+='<input class="field" type="date" id="f_gestopt" value="'+esc(d.gestopt)+'" style="margin-top:8px"><div class="note">Vanaf deze dag telt hij niet meer mee. Eerdere maanden blijven kloppen.</div>';
+  }
+  h+='<button class="btn" data-act="postbewaar">Bewaren</button>';
+  if(!nieuw)h+='<button class="btn outline" data-act="postkopie">Kopiëren</button><button class="btn rood" data-act="postweg">Verwijderen</button>';
+  return h;
+}
+function omrekTekst(){
+  var d=ui.draft, b=getal(d.bedragTxt);
+  if(!(b>0))return 'Vul een bedrag in, de app rekent het om naar per maand en per jaar.';
+  var m=b*FR[d.freq].f;
+  if(d.freq==='maand'&&d.maanden&&d.maanden.length){m=b*d.maanden.length/12;return d.maanden.length+'× per jaar: <b>'+eur(m*12)+'</b> per jaar, gemiddeld <b>'+eur(m)+'</b> per maand.'}
+  if(d.freq==='maand')return 'Is <b>'+eur(m*12)+'</b> per jaar.';
+  return 'Is ongeveer <b>'+eur(m)+'</b> per maand en <b>'+eur(m*12)+'</b> per jaar.';
+}
+function leesPostForm(){
+  var d=ui.draft; if(!d)return;
+  function v(id){var e=document.getElementById(id);return e?e.value:undefined}
+  if(v('f_naam')!==undefined)d.naam=v('f_naam');
+  if(v('f_bedrag')!==undefined)d.bedragTxt=v('f_bedrag');
+  if(v('f_start')!==undefined)d.start=v('f_start');
+  if(v('f_eind')!==undefined)d.eind=v('f_eind');
+  if(v('f_lev')!==undefined)d.lev=v('f_lev');
+  if(v('f_not')!==undefined)d.notitie=v('f_not');
+  if(v('f_gestopt')!==undefined)d.gestopt=v('f_gestopt');
+}
+function openPost(id,voorbeeld){
+  var p=id?S.posten.filter(function(x){return x.id===id})[0]:null;
+  if(p)ui.draft={id:p.id,naam:p.naam,bedragTxt:eurTekst(p.bedrag),freq:p.freq,cat:p.cat,start:p.start,eind:p.eind||'',lev:p.lev||'',notitie:p.notitie||'',gestopt:p.gestopt||'',maanden:p.maanden&&p.maanden.length?p.maanden.slice():null,catHand:true};
+  else ui.draft={naam:voorbeeld?voorbeeld.n:'',bedragTxt:'',freq:voorbeeld?voorbeeld.f:'maand',cat:voorbeeld?voorbeeld.c:'overig',start:today(),eind:'',lev:'',notitie:'',gestopt:'',catHand:!!voorbeeld};
+  ui.sheet='post'; ui.catOpen=false;
+  openSheet(postForm());
+  if(!p){var el=document.getElementById(voorbeeld?'f_bedrag':'f_naam');if(el)setTimeout(function(){el.focus()},250)}
+}
+function herteken(){
+  var el=document.getElementById('sheet'), top=el.scrollTop;
+  if(ui.sheet==='post'){leesPostForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+postForm()}
+  else if(ui.sheet==='los'){leesLosForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+losForm()}
+  else if(ui.sheet==='instellingen'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+instellingenForm()}
+  el.scrollTop=top;
+}
+function bewaarPost(kopie){
+  leesPostForm();
+  var d=ui.draft, b=getal(d.bedragTxt);
+  if(!d.naam.trim()){alert('Geef het een naam.');return}
+  if(!(b>=0)||isNaN(b)){alert('Dat bedrag snap ik niet. Typ bijvoorbeeld 12,50');return}
+  if(!d.start)d.start=today();
+  var p=d.id&&!kopie?S.posten.filter(function(x){return x.id===d.id})[0]:null;
+  if(p){
+    if(Math.abs(p.bedrag-b)>.004){
+      p.hist=p.hist&&p.hist.length?p.hist:[{d:p.start,b:p.bedrag}];
+      var t=today(); if(p.hist[p.hist.length-1].d===t)p.hist[p.hist.length-1].b=b;else p.hist.push({d:t,b:b});
+      if(p.hist.length>1&&p.hist[p.hist.length-1].b===p.hist[p.hist.length-2].b)p.hist.pop();
+    }
+    if(p.start!==d.start&&p.hist&&p.hist.length&&p.hist[0].d>d.start)p.hist[0].d=d.start;
+    p.naam=d.naam.trim();p.bedrag=b;p.freq=d.freq;p.cat=d.cat;p.start=d.start;p.eind=d.eind;p.lev=d.lev.trim();p.notitie=d.notitie;p.gestopt=d.gestopt||'';
+    if(d.freq==='maand'&&d.maanden&&d.maanden.length)p.maanden=d.maanden.slice().sort(function(a,b){return a-b});else delete p.maanden;
+    ui.msg='Bewaard.';
+  }else{
+    S.posten.push({id:uid(),naam:d.naam.trim()+(kopie?' (kopie)':''),bedrag:b,freq:d.freq,cat:d.cat,start:d.start,eind:kopie?'':d.eind,lev:d.lev.trim(),notitie:d.notitie,gestopt:'',hist:[{d:d.start,b:b}]});
+    if(d.freq==='maand'&&d.maanden&&d.maanden.length)S.posten[S.posten.length-1].maanden=d.maanden.slice().sort(function(a,b){return a-b});
+    ui.msg=kopie?'Gekopieerd.':d.naam.trim()+' staat erin: '+eur(b*FR[d.freq].f)+' per maand.';
+  }
+  S.begonnen=true; save(); closeSheet(); render();
+}
+
+function losForm(){
+  var d=ui.draft, nieuw=!d.id, h=kop(nieuw?'Losse uitgave':'Uitgave');
+  h+='<div class="label">Bedrag</div><div class="eur groot"><input class="field groot" id="l_bedrag" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'" autocomplete="off"></div>';
+  h+='<div class="label">Soort</div>'+catKiezer(d.cat,LOS_EERST);
+  h+='<div class="label">Omschrijving (mag leeg)</div><input class="field" id="l_oms" placeholder="Bijvoorbeeld: Lidl, weekboodschappen" value="'+esc(d.oms)+'" autocomplete="off">';
+  h+='<div class="label">Datum</div><input class="field" type="date" id="l_d" value="'+esc(d.d)+'">';
+  h+='<button class="btn" data-act="losbewaar">Bewaren</button>';
+  if(nieuw)h+='<button class="btn outline" data-act="losbewaarnog">Bewaren en nog een</button>';
+  else h+='<button class="btn rood" data-act="losweg">Verwijderen</button>';
+  return h;
+}
+function leesLosForm(){
+  var d=ui.draft;if(!d)return;
+  var a=document.getElementById('l_bedrag'),o=document.getElementById('l_oms'),t=document.getElementById('l_d');
+  if(a)d.bedragTxt=a.value; if(o)d.oms=o.value; if(t)d.d=t.value;
+}
+function openLos(id){
+  var u=id?S.uitgaven.filter(function(x){return x.id===id})[0]:null;
+  var k=ui.maand||ym(today()), dflt=k===ym(today())?today():k+'-01';
+  ui.draft=u?{id:u.id,bedragTxt:eurTekst(u.b),cat:u.cat,oms:u.oms||'',d:u.d,catHand:true}:{bedragTxt:'',cat:'boodsch',oms:'',d:dflt,catHand:false};
+  ui.sheet='los'; ui.catOpen=!u;
+  openSheet(losForm());
+  if(!u)setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},250);
+}
+function bewaarLos(nog){
+  leesLosForm();
+  var d=ui.draft,b=getal(d.bedragTxt);
+  if(!(b>0)){alert('Vul een bedrag in, bijvoorbeeld 23,40');return}
+  var u=d.id?S.uitgaven.filter(function(x){return x.id===d.id})[0]:null;
+  if(u){u.b=b;u.cat=d.cat;u.oms=d.oms.trim();u.d=d.d||today()}
+  else S.uitgaven.push({id:uid(),b:b,cat:d.cat,oms:d.oms.trim(),d:d.d||today()});
+  S.begonnen=true; save();
+  if(nog){ui.draft={bedragTxt:'',cat:d.cat,oms:'',d:d.d,catHand:false};ui.catOpen=false;herteken();render();
+    setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},50);return}
+  ui.maand=ym(d.d||today());
+  closeSheet(); render();
+}
+
+function instellingenForm(){
+  var h=kop('Instellingen');
+  h+='<div class="label">Huishouden</div>'+huishoudenBlok();
+  h+='<div class="label">Netto inkomen per maand, samen (mag leeg)</div><div class="eur"><input class="field" id="s_ink" inputmode="decimal" placeholder="0" value="'+(+S.hh.inkomen?esc(eurTekst(S.hh.inkomen)):'')+'"></div>'
+    + '<div class="note">Alleen voor jezelf: dan zie je welk deel van je inkomen naar vaste lasten gaat, en of je misschien recht hebt op toeslag.</div>';
+  h+='<div class="label">Privacy</div><button class="schakel'+(S.hide?' on':'')+'" data-act="hide"><span>Bedragen verbergen</span><i></i></button>';
+  h+='<div class="divider"></div><div class="label">Back-up</div>'
+    + '<div class="note" style="margin-top:0">Alles staat alleen op dit toestel. Stuur de back-up af en toe naar jezelf, bijvoorbeeld via WhatsApp of mail. Gaat je telefoon kapot, dan zet je hem op een ander toestel hier weer terug.</div>'
+    + '<button class="btn klein" data-act="bkdeel">Back-up sturen</button>'
+    + '<button class="btn outline klein" data-act="bkfile">Back-up opslaan als bestand</button>'
+    + '<button class="btn outline klein" data-act="bkkopie">Back-up kopiëren</button>'
+    + (S.lastBackup?'<div class="note">Laatste back-up: '+esc(datum(S.lastBackup,1))+'</div>':'');
+  h+='<div class="label">Terugzetten</div><button class="btn outline klein" data-act="pickfile">Back-upbestand kiezen</button>'
+    + '<textarea class="field" id="s_import" placeholder="…of plak hier de tekst van een back-up" style="margin-top:10px"></textarea>'
+    + '<button class="btn outline klein" data-act="import">Geplakte tekst terugzetten</button>';
+  if(S.snaps.length){
+    h+='<div class="label">Herstelpunten op dit toestel</div><div class="card">';
+    S.snaps.forEach(function(s,i){h+='<button class="rij" data-act="snap" data-i="'+i+'"><div class="t"><div class="n">'+esc(datum(s.dag,1))+'</div><div class="m">'+s.n+' vaste lasten · '+s.u+' uitgaven</div></div><div class="b"><div class="p" style="color:var(--accent);font-weight:600">terugzetten</div></div></button>'});
+    h+='</div><div class="note">Elke dag dat je de app opent, bewaart hij een kopie. De laatste vijf blijven staan.</div>';
+  }
+  h+='<div class="divider"></div><button class="btn rood" data-act="wisalles">Alles wissen</button>';
+  h+='<div class="versie">Huishoudboek v'+VERSIE+' · alles blijft op je toestel</div>';
+  return h;
+}
+function openInstellingen(){ui.sheet='instellingen';openSheet(instellingenForm())}
+
+function vraag(titel,tekst,ja,cb){
+  var el=document.getElementById('vraag');
+  el.innerHTML='<div class="vraag-bg"><div class="vraag"><h4>'+esc(titel)+'</h4><p>'+esc(tekst)+'</p><div class="twee">'
+    + '<button class="btn outline" data-act="vraagnee">Annuleren</button><button class="btn rood" style="background:var(--clay);color:#fff;border:0" data-act="vraagja">'+esc(ja)+'</button></div></div></div>';
+  vraagCb=cb;
+}
+var vraagCb=null;
+
+/* ───────────────────────────── back-up ───────────────────────────── */
+function backupTekst(){
+  return JSON.stringify({app:'huishoudboek',v:1,gemaakt:new Date().toISOString(),hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg});
+}
+function backupNaam(){var d=new Date();return 'huishoudboek-'+today()+'-'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+'.json'}
+function zetTerug(tekst){
+  var d;
+  try{d=JSON.parse(tekst)}catch(e){alert('Dit is geen back-up van het Huishoudboek.');return}
+  if(!d||!Array.isArray(d.posten)){alert('Dit is geen back-up van het Huishoudboek.');return}
+  vraag('Back-up terugzetten?','Wat nu in de app staat wordt vervangen door de back-up: '+d.posten.length+' vaste lasten en '+(d.uitgaven||[]).length+' uitgaven. Er wordt eerst een herstelpunt gemaakt.','Terugzetten',function(){
+    if(S.posten.length||S.uitgaven.length){
+      S.snaps.unshift({dag:today(),n:S.posten.length,u:S.uitgaven.length,data:backupTekst()});S.snaps=S.snaps.slice(0,5);
+    }
+    S.posten=d.posten; S.uitgaven=Array.isArray(d.uitgaven)?d.uitgaven:[];
+    if(d.hh)S.hh=Object.assign({volw:1,kind:0,woning:'huur',inkomen:0},d.hh);
+    S.tipsWeg=d.tipsWeg||{}; S.begonnen=true;
+    ui.msg='Teruggezet: '+S.posten.length+' vaste lasten en '+S.uitgaven.length+' uitgaven.';
+    save(); closeSheet(); render();
+  });
+}
+function markeerBackup(){S.lastBackup=today();save()}
+
+document.getElementById('s_file').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f)return;
+  var r=new FileReader(); r.onload=function(){zetTerug(String(r.result))}; r.readAsText(f); e.target.value='';
+});
+
+/* ───────────────────────────── tikken ───────────────────────────── */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]'); if(!b)return;
+  var act=b.dataset.act;
+
+  if(act==='vraagja'){document.getElementById('vraag').innerHTML='';var cb=vraagCb;vraagCb=null;if(cb)cb();return}
+  if(act==='vraagnee'){document.getElementById('vraag').innerHTML='';vraagCb=null;return}
+
+  if(act==='tab'){ui.tab=b.dataset.v;ui.opruim=false;ui.ongedaan=null;if(ui.tab==='uitgaven'&&!ui.maand)ui.maand=ym(today());save();render();window.scrollTo(0,0);return}
+  if(act==='hide'){S.hide=!S.hide;save();render();if(ui.sheet==='instellingen')herteken();return}
+  if(act==='instellingen'){openInstellingen();return}
+  if(act==='close'){closeSheet();return}
+  if(act==='opruim'){ui.opruim=!ui.opruim;ui.ongedaan=null;render();return}
+  if(act==='snelweg'){var ix2=-1;S.posten.forEach(function(x,i){if(x.id===b.dataset.id)ix2=i});
+    if(ix2>=0){ui.ongedaan={p:S.posten[ix2],i:ix2};S.posten.splice(ix2,1);save();render()}return}
+  if(act==='ongedaan'){var og=ui.ongedaan;if(og){S.posten.splice(Math.min(og.i,S.posten.length),0,og.p);ui.ongedaan=null;save();render()}return}
+  if(act==='sort'){ui.sort=ui.sort==='cat'?'duur':'cat';render();return}
+  if(act==='catvast'){ui.tab='vast';ui.sort='cat';ui.zoek='';render();var g=document.getElementById('g-'+b.dataset.v);if(g)g.scrollIntoView({block:'start'});window.scrollBy(0,-80);return}
+
+  if(act==='hh'){var k=b.dataset.k,n=(+S.hh[k]||0)+(+b.dataset.d);S.hh[k]=Math.max(k==='volw'?1:0,Math.min(12,n));save();render();if(ui.sheet==='instellingen')herteken();return}
+  if(act==='woning'){S.hh.woning=b.dataset.v;save();render();if(ui.sheet==='instellingen')herteken();return}
+
+  if(act==='nieuwpost'){openPost();return}
+  if(act==='voorbeeld'){openPost(null,VOORBEELDEN[+b.dataset.i]);return}
+  if(act==='post'){openPost(b.dataset.id);return}
+  if(act==='freq'){ui.draft.freq=b.dataset.v;herteken();return}
+  if(act==='maandenuit'){ui.draft.maanden=null;herteken();return}
+  if(act==='maandenaan'){ui.draft.maanden=ui.draft.maanden||[1,2,3,4,5,6,7,8,9,10,11,12];herteken();return}
+  if(act==='mndkies'){var mv=+b.dataset.v,ma=ui.draft.maanden,ix=ma.indexOf(mv);if(ix>=0){if(ma.length>1)ma.splice(ix,1)}else ma.push(mv);herteken();return}
+  if(act==='catopen'){ui.catOpen=!ui.catOpen;herteken();return}
+  if(act==='catkies'){ui.draft.cat=b.dataset.v;ui.draft.catHand=true;ui.catOpen=false;herteken();return}
+  if(act==='stoptoggle'){leesPostForm();ui.draft.gestopt=ui.draft.gestopt?'':today();herteken();return}
+  if(act==='postbewaar'){bewaarPost(false);return}
+  if(act==='postkopie'){bewaarPost(true);return}
+  if(act==='postweg'){var d=ui.draft;
+    vraag('Verwijderen?','"'+d.naam+'" gaat eruit, ook uit de maanden die al voorbij zijn. Is het opgezegd? Zet dan liever de schakelaar op opgezegd, dan blijven oude maanden kloppen.','Verwijderen',function(){
+      S.posten=S.posten.filter(function(x){return x.id!==d.id});save();closeSheet();render()});return}
+
+  if(act==='nieuwlos'){openLos();return}
+  if(act==='los'){openLos(b.dataset.id);return}
+  if(act==='losbewaar'){bewaarLos(false);return}
+  if(act==='losbewaarnog'){bewaarLos(true);return}
+  if(act==='losweg'){var dl=ui.draft;
+    vraag('Uitgave verwijderen?','Deze uitgave van '+eur(getal(dl.bedragTxt))+' gaat eruit.','Verwijderen',function(){
+      S.uitgaven=S.uitgaven.filter(function(x){return x.id!==dl.id});save();closeSheet();render()});return}
+
+  if(act==='maand'){ui.maand=schuifMaand(ui.maand||ym(today()),+b.dataset.d);render();return}
+  if(act==='kiesmaand'){ui.maand=b.dataset.v;render();return}
+
+  if(act==='tipweg'){S.tipsWeg[b.dataset.id]=today();save();render();return}
+  if(act==='tipterug'){delete S.tipsWeg[b.dataset.id];save();render();return}
+  if(act==='toonweg'){ui.toonWeg=!ui.toonWeg;render();return}
+
+  if(act==='bkdeel'){
+    markeerBackup(); render(); if(ui.sheet==='instellingen')herteken();
+    var txt=backupTekst();
+    try{var fl=new File([txt],backupNaam(),{type:'application/json'});
+      if(navigator.canShare&&navigator.canShare({files:[fl]})){navigator.share({files:[fl],title:'Huishoudboek back-up'}).catch(function(){});return}}catch(er){}
+    if(navigator.share){navigator.share({text:txt}).catch(function(){});return}
+    downloadBackup(); return;
+  }
+  if(act==='bkfile'){markeerBackup();downloadBackup();render();herteken();return}
+  if(act==='bkkopie'){markeerBackup();
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(backupTekst()).then(function(){b.textContent='Gekopieerd'},function(){});return}
+  if(act==='pickfile'){document.getElementById('s_file').click();return}
+  if(act==='import'){zetTerug(document.getElementById('s_import').value);return}
+  if(act==='snap'){var sp=S.snaps[+b.dataset.i];if(sp)zetTerug(sp.data);return}
+  if(act==='wisalles'){
+    vraag('Alles wissen?','Alle vaste lasten, uitgaven en herstelpunten gaan weg van dit toestel. Maak eerst een back-up als je twijfelt. Dit kun je niet terugdraaien.','Alles wissen',function(){
+      S.posten=[];S.uitgaven=[];S.snaps=[];S.tipsWeg={};S.lastBackup='';save();closeSheet();render()});return}
+});
+function downloadBackup(){
+  var bl=new Blob([backupTekst()],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(bl);a.download=backupNaam();document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+
+/* typen: live omrekenen en zelf een soort raden, zonder het veld te verstoren */
+document.addEventListener('input',function(e){
+  var id=e.target.id;
+  if(id==='zoek'){ui.zoek=e.target.value;var pos=e.target.selectionStart;render();var z=document.getElementById('zoek');if(z){z.focus();try{z.setSelectionRange(pos,pos)}catch(er){}}return}
+  if(id==='f_bedrag'){ui.draft.bedragTxt=e.target.value;var o=document.getElementById('f_omrek');if(o)o.innerHTML=omrekTekst();return}
+  if(id==='f_naam'||id==='f_lev'){
+    if(ui.draft.catHand)return;
+    var n=document.getElementById('f_naam').value+' '+document.getElementById('f_lev').value, c=raadCat(n);
+    if(c&&c!==ui.draft.cat){ui.draft.cat=c;var kk=document.querySelector('#sheet .catkeus');
+      if(kk){kk.querySelector('.ico').outerHTML=ico(c);kk.querySelector('.t').textContent=CAT[c].n}}
+    return;
+  }
+  if(id==='l_oms'){
+    if(ui.draft.catHand)return;
+    var c2=raadCat(e.target.value);
+    if(c2&&c2!==ui.draft.cat){ui.draft.cat=c2;leesLosForm();var wasOpen=ui.catOpen;herteken();
+      var el=document.getElementById('l_oms');if(el){el.focus();var L=el.value.length;el.setSelectionRange(L,L)}}
+    return;
+  }
+  if(id==='s_ink'){var v=getal(e.target.value);S.hh.inkomen=v>0?v:0;save();render();return}
+});
+
+/* ───────────────────────────── start ───────────────────────────── */
+load();
+if(!ui.maand)ui.maand=ym(today());
+maakHerstelpunt();
+render();
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>
