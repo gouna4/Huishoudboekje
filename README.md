@@ -1,7 +1,7 @@
-# Huishoudboek · v7
+# Huishoudboek · v9
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
-krijgen waar je kunt besparen.
+krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
 
 **Geen server, geen account, geen internet nodig.** Wat je invult blijft in de
 opslag van de browser op je eigen toestel en wordt nergens naartoe gestuurd.
@@ -11,8 +11,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 - **Vaste lasten** met een eigen rondje per soort, zoals in de bankapp: huur,
   energie, water, internet, mobiel, verzekeringen, belastingen, boodschappen,
-  streaming, sport, auto, kinderen, moskee en goede doelen, sparen en meer
-  (27 soorten)
+  streaming, sport, auto, kinderen, huis & klussen, moskee en goede doelen,
+  sparen en meer (28 soorten)
 - Per week, per 2 of 4 weken, per maand, kwartaal, half jaar of jaar. De app
   rekent alles om naar per maand, per jaar en per week
 - **Alleen in sommige maanden**, voor bijvoorbeeld gemeentebelasting in tien
@@ -48,6 +48,11 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   en wat er per salarisperiode is afgeschreven
 - **Hoort bij**: per vaste last zelf kiezen in welke cirkel hij meetelt
 - **Tijdelijk**: een vaste last die na een aantal keer vanzelf stopt
+- **Spaarrekening**: tik op de cirkel Sparen. Saldo één keer invullen, dan
+  rekent de app verder. Erop gezet en noodgreep (geld eraf naar je
+  betaalrekening) vul je in; vaste spaaropdrachten tellen vanzelf mee. Een
+  noodgreep is geen inkomen: hij maakt je budget niet groter en blijft staan
+  als "nog terug te zetten" tot je weer iets terugzet
 - **Vervoer**: eigen tabblad met tanken per maand en de vaste autokosten
 - **Bewust zo ingesteld**: vinkje per vaste last, dan geeft de app er geen tips over
 - **Jaaroverzicht**: per maand, per soort en per vaste last; afdrukken of
@@ -74,8 +79,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='7'` bovenaan het script
-2. `sw.js` — `huishoudboek-v7`
+1. `index.html` — `var VERSIE='9'` bovenaan het script
+2. `sw.js` — `huishoudboek-v9`
 
 ## Nooit in deze repo
 
