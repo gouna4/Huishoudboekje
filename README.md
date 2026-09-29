@@ -1,4 +1,4 @@
-# Huishoudboek · v4
+# Huishoudboek · v5
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -39,6 +39,9 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 - **Van salaris tot salaris**: het huisje rekent per periode vanaf je
   betaaldag (standaard de 25e, in het weekend de vrijdag ervoor), met pijltjes
   om terug te kijken naar vorige periodes
+- **Al afgeschreven**: bij elke vaste last geef je aan op welke dag hij echt
+  afging, en eventueel dat hij voortaan op die dag komt. Valt een vaste last in
+  het weekend, dan rekent de app met de vrijdag ervoor (instelbaar)
 - **Vervoer**: eigen tabblad met tanken per maand en de vaste autokosten
 - **Bewust zo ingesteld**: vinkje per vaste last, dan geeft de app er geen tips over
 - **Jaaroverzicht**: per maand, per soort en per vaste last; afdrukken of
@@ -62,8 +65,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='4'` bovenaan het script
-2. `sw.js` — `huishoudboek-v4`
+1. `index.html` — `var VERSIE='5'` bovenaan het script
+2. `sw.js` — `huishoudboek-v5`
 
 ## Nooit in deze repo
 

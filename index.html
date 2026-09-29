@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v4 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v5 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='4';
+var VERSIE='5';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -604,11 +604,30 @@ function keren(p,k){
   }
   return res.filter(function(d){return !p.gestopt||d<p.gestopt});
 }
+/* Valt een afschrijving in het weekend, dan gaat het geld meestal de vrijdag
+   ervoor of de maandag erna. Heb je zelf gezegd wanneer hij echt afging
+   (p.afw), dan telt die dag. keren() geeft de geplande dag, dit de echte. */
+function schuifWeekend(d){
+  var r=S.hh.vastWeekend||'voor'; if(r==='geen')return d;
+  var x=dag(d),w=x.getDay(); if(w!==0&&w!==6)return d;
+  var n=r==='voor'?(w===6?-1:-2):(w===6?2:1);
+  return iso(new Date(x.getFullYear(),x.getMonth(),x.getDate()+n));
+}
+function echteDag(p,pl){return (p.afw&&p.afw[pl])||((FR[p.freq]||FR.maand).d?pl:schuifWeekend(pl))}
+function afschrijvingen(p,van,tot){
+  var out=[],k=schuifMaand(ym(van),-1),eind=schuifMaand(ym(tot),1);
+  while(k<=eind){
+    keren(p,k).forEach(function(pl){var d=echteDag(p,pl);if(d>=van&&d<=tot)out.push({pl:pl,d:d,b:bedragOp(p,pl)})});
+    k=schuifMaand(k,1);
+  }
+  return out.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+}
+function laatsteDag(k){var y=+k.slice(0,4),m=+k.slice(5,7);return k+'-'+pad(new Date(y,m,0).getDate())}
 /* alles wat in een maand echt de deur uitgaat */
 function maandStaat(k){
   var vast=[],los=[],tv=0,tl=0,perCat={};
   S.posten.forEach(function(p){
-    keren(p,k).forEach(function(d){var b=bedragOp(p,d);vast.push({p:p,d:d,b:b});tv+=b;perCat[p.cat]=(perCat[p.cat]||0)+b});
+    afschrijvingen(p,k+'-01',laatsteDag(k)).forEach(function(x){vast.push({p:p,d:x.d,b:x.b});tv+=x.b;perCat[p.cat]=(perCat[p.cat]||0)+x.b});
   });
   S.uitgaven.forEach(function(u){if(ym(u.d)===k){los.push(u);tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b}});
   vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
@@ -635,15 +654,12 @@ function losGemiddeld(){
 }
 function binnenkort(dagen){
   var t=today(), eind=iso(new Date(Date.now()+dagen*86400000)), k=ym(t), out=[];
-  [k,schuifMaand(k,1)].forEach(function(mk){
-    S.posten.forEach(function(p){keren(p,mk).forEach(function(d){if(d>=t&&d<=eind)out.push({p:p,d:d,b:bedragOp(p,d)})})});
-  });
+  S.posten.forEach(function(p){afschrijvingen(p,t,eind).forEach(function(x){out.push({p:p,d:x.d,b:x.b})})});
   return out.sort(function(a,b){return a.d<b.d?-1:1});
 }
 function volgende(p){
-  var t=today(),k=ym(t);
-  for(var i=0;i<14;i++){var l=keren(p,schuifMaand(k,i)).filter(function(d){return d>=t});if(l.length)return l[0]}
-  return '';
+  var t=today(), l=afschrijvingen(p,t,iso(new Date(Date.now()+400*86400000)));
+  return l.length?l[0].d:'';
 }
 
 /* ───────────────────────────── bespaartips ─────────────────────────────
@@ -1077,11 +1093,8 @@ function periodeNaam(per){
 }
 /* alles tussen twee dagen, ook als dat over twee maanden loopt */
 function staatTussen(van,tot){
-  var vast=[],los=[],k=ym(van),eind=ym(tot);
-  while(k<=eind){
-    S.posten.forEach(function(p){keren(p,k).forEach(function(d){if(d>=van&&d<=tot)vast.push({p:p,d:d,b:bedragOp(p,d)})})});
-    k=schuifMaand(k,1);
-  }
+  var vast=[],los=[];
+  S.posten.forEach(function(p){afschrijvingen(p,van,tot).forEach(function(x){vast.push({p:p,d:x.d,b:x.b})})});
   S.uitgaven.forEach(function(u){if(u.d>=van&&u.d<=tot)los.push(u)});
   vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
   return {vast:vast,los:los};
@@ -1309,6 +1322,21 @@ function postForm(){
     }
     h+='<div class="label">Tips</div><button class="schakel'+(d.bewust?' on':'')+'" data-act="bewusttoggle"><span>Bewust zo ingesteld, geen tips</span><i></i></button>'
       + '<div class="note">Bijvoorbeeld als je je termijnbedrag zelf hoger hebt gezet. De app zegt er dan niets meer over bij Besparen.</div>';
+    if(p&&actief(p)){
+      var t=today(), vorig=afschrijvingen(p,iso(new Date(Date.now()-62*86400000)),t), volg=afschrijvingen(p,iso(new Date(Date.now()+86400000)),iso(new Date(Date.now()+400*86400000)));
+      h+='<div class="label">Afschrijving</div><div class="card">';
+      if(vorig.length){var v=vorig[vorig.length-1];h+='<div class="rij" style="min-height:0"><div class="t"><div class="n" style="font-size:14px">Laatst: '+esc(datum(v.d))+'</div></div><span class="tag af">afgeschreven</span></div>'}
+      if(volg.length)h+='<div class="rij" style="min-height:0"><div class="t"><div class="n" style="font-size:14px">Volgende: '+esc(datum(volg[0].d))+'</div></div><span class="tag nog">komt nog</span></div>';
+      h+='</div>';
+      if(!d.afOpen)h+='<button class="btn outline klein" data-act="afopen">✓ Al afgeschreven</button>';
+      else{
+        var afd=d.afd||t, dg=+afd.slice(8,10);
+        h+='<div class="note">Op welke dag ging het echt van je rekening? Dan telt de app het mee in de periode waar die dag in valt.</div>'
+          + '<input class="field" type="date" id="f_afd" value="'+esc(afd)+'" style="margin-top:8px">'
+          + ((FR[d.freq]||FR.maand).m?'<button class="schakel'+(d.afVast?' on':'')+'" data-act="afvast" style="margin-top:8px"><span>Voortaan elke keer op de '+dg+'e</span><i></i></button>':'')
+          + '<div class="twee" style="margin-top:10px"><button class="btn outline klein" data-act="afdicht" style="margin:0">Annuleren</button><button class="btn klein" data-act="afbewaar" style="margin:0">Opslaan</button></div>';
+      }
+    }
     h+='<div class="label">Opgezegd</div><button class="schakel'+(d.gestopt?' on':'')+'" data-act="stoptoggle"><span>'+(d.gestopt?'Opgezegd per '+esc(datum(d.gestopt,1)):'Loopt nog')+'</span><i></i></button>';
     if(d.gestopt)h+='<input class="field" type="date" id="f_gestopt" value="'+esc(d.gestopt)+'" style="margin-top:8px"><div class="note">Vanaf deze dag telt hij niet meer mee. Eerdere maanden blijven kloppen.</div>';
   }
@@ -1334,6 +1362,7 @@ function leesPostForm(){
   if(v('f_lev')!==undefined)d.lev=v('f_lev');
   if(v('f_not')!==undefined)d.notitie=v('f_not');
   if(v('f_gestopt')!==undefined)d.gestopt=v('f_gestopt');
+  if(v('f_afd')!==undefined)d.afd=v('f_afd');
 }
 function openPost(id,voorbeeld){
   if(ui.sheet==='pijler'){bladGeduwd=false;hideSheet()}
@@ -1353,6 +1382,30 @@ function herteken(){
   else if(ui.sheet==='instellingen'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+instellingenForm()}
   el.scrollTop=top;
 }
+/* de afschrijving die het dichtst bij de gekozen dag ligt, krijgt die dag */
+function dichtsteKeer(p,D){
+  var best="",afst=Infinity,k=schuifMaand(ym(D),-1);
+  for(var i=0;i<3;i++){keren(p,k).forEach(function(pl){var a=Math.abs(dag(pl)-dag(D));if(a<=afst){afst=a;best=pl}});k=schuifMaand(k,1)}
+  return best;
+}
+function zetAfgeschreven(){
+  var d=ui.draft, p=S.posten.filter(function(x){return x.id===d.id})[0], D=d.afd||today();
+  if(!p)return;
+  if(d.afVast&&(FR[p.freq]||FR.maand).m){
+    /* de dag in de maand verschuiven; de maand waarin hij begon blijft gelijk */
+    var st=dag(p.start), dim=new Date(st.getFullYear(),st.getMonth()+1,0).getDate();
+    p.start=p.start.slice(0,8)+pad(Math.min(+D.slice(8,10),dim)); d.start=p.start;
+    if(p.hist&&p.hist.length&&p.hist[0].d>p.start)p.hist[0].d=p.start;
+  }
+  var pl=dichtsteKeer(p,D);
+  if(!pl){alert('Rond die dag hoort geen afschrijving van '+p.naam+'.');return}
+  p.afw=p.afw||{};
+  if(((FR[p.freq]||FR.maand).d?pl:schuifWeekend(pl))===D)delete p.afw[pl];else p.afw[pl]=D;
+  d.afOpen=false; save();
+  ui.msg=p.naam+' telt nu mee op '+datum(D)+'.';
+  render(); herteken();
+}
+
 function bewaarPost(kopie){
   leesPostForm();
   var d=ui.draft, b=getal(d.bedragTxt);
@@ -1476,6 +1529,7 @@ function instellingenForm(){
     + '<div class="note">Alleen voor jezelf: dan zie je welk deel van je inkomen naar vaste lasten gaat, en of je misschien recht hebt op toeslag.</div>';
   h+='<div class="label">Salaris</div><div class="stepper"><span class="sl">Komt op de</span><span class="sc"><button data-act="betaaldag" data-d="-1">−</button><span class="sn">'+(+S.hh.betaaldag||25)+'e</span><button data-act="betaaldag" data-d="1">+</button></span></div>'
     + '<button class="schakel'+(S.hh.weekend!==false?' on':'')+'" data-act="weekend" style="margin-top:8px"><span>Valt het in het weekend: de vrijdag ervoor</span><i></i></button>'
+    + '<div class="label">Vaste lasten in het weekend</div><div class="chips">'+[['voor','Vrijdag ervoor'],['na','Maandag erna'],['geen','Niet schuiven']].map(function(o){return '<button class="chip'+((S.hh.vastWeekend||'voor')===o[0]?' on':'')+'" data-act="vastweekend" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'
     + '<div class="note">Het huisje rekent van salaris tot salaris. Nu: '+esc(periodeNaam(periode(0)))+'.</div>';
   h+='<div class="label">Privacy</div><button class="schakel'+(S.hide?' on':'')+'" data-act="hide"><span>Bedragen verbergen</span><i></i></button>'
     + '<button class="schakel'+(S.pin?' on':'')+'" data-act="pinzet" style="margin-top:8px"><span>'+(S.pin?'Pincode staat aan':'Pincode van vier cijfers')+'</span><i></i></button>'
@@ -1608,6 +1662,11 @@ document.addEventListener('click',function(e){
   if(act==='catopen'){ui.catOpen=!ui.catOpen;herteken();return}
   if(act==='catkies'){ui.draft.cat=b.dataset.v;ui.draft.catHand=true;ui.catOpen=false;herteken();return}
   if(act==='bewusttoggle'){leesPostForm();ui.draft.bewust=!ui.draft.bewust;herteken();return}
+  if(act==='afopen'){leesPostForm();ui.draft.afOpen=true;ui.draft.afd=today();ui.draft.afVast=false;herteken();return}
+  if(act==='afdicht'){leesPostForm();ui.draft.afOpen=false;herteken();return}
+  if(act==='afvast'){leesPostForm();ui.draft.afVast=!ui.draft.afVast;herteken();return}
+  if(act==='afbewaar'){leesPostForm();zetAfgeschreven();return}
+  if(act==='vastweekend'){S.hh.vastWeekend=b.dataset.v;save();render();herteken();return}
   if(act==='stoptoggle'){leesPostForm();ui.draft.gestopt=ui.draft.gestopt?'':today();herteken();return}
   if(act==='postbewaar'){bewaarPost(false);return}
   if(act==='postkopie'){bewaarPost(true);return}
@@ -1690,6 +1749,7 @@ document.addEventListener('input',function(e){
       var el=document.getElementById('l_oms');if(el){el.focus();var L=el.value.length;el.setSelectionRange(L,L)}}
     return;
   }
+  if(id==='f_afd'){ui.draft.afd=e.target.value;var sw=document.querySelector('[data-act=afvast] span');if(sw&&e.target.value)sw.textContent='Voortaan elke keer op de '+(+e.target.value.slice(8,10))+'e';return}
   if(id==='h_ink'){var bv=getal(e.target.value);S.hh.inkomen=bv>0?bv:0;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){var y=window.scrollY;render();window.scrollTo(0,y)},1200);return}
   if(id==='s_ink'){var v=getal(e.target.value);S.hh.inkomen=v>0?v:0;save();render();return}
 });
