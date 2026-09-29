@@ -1,4 +1,4 @@
-# Huishoudboek · v1
+# Huishoudboek · v3
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -30,6 +30,17 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   een huishouden van jouw grootte, en kijkt naar prijsstijgingen, aflopende
   contracten, dure telefoonabonnementen, toeslagen en het overstapseizoen van
   de zorgverzekering
+- **Thuis** (het huisje linksboven, daar start de app): je vult je netto
+  inkomen in en de app verdeelt het over vier pilaren, elk met een cirkel die
+  laat zien hoe ver je deze maand bent: vaste lasten, uitgaven, vervoer (10%)
+  en sparen (5 tot 20%, zelf te kiezen). Geef je bij uitgaven of vervoer te
+  veel uit, dan gaat het eerst van wat er bij de ander over is en daarna van
+  sparen, nooit van de vaste lasten. Tik op een cirkel voor alles wat erin zit
+- **Vervoer**: eigen tabblad met tanken per maand en de vaste autokosten
+- **Bewust zo ingesteld**: vinkje per vaste last, dan geeft de app er geen tips over
+- **Jaaroverzicht**: per maand, per soort en per vaste last; afdrukken of
+  opslaan als PDF
+- **Pincode** van vier cijfers; op slot bij openen en na drie minuten weg
 - Bedragen verbergen met het oogje
 - Back-up sturen, opslaan of kopiëren; terugzetten uit een bestand of geplakte
   tekst; vijf herstelpunten op het toestel zelf; een melding als je twee
@@ -48,8 +59,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='1'` bovenaan het script
-2. `sw.js` — `huishoudboek-v1`
+1. `index.html` — `var VERSIE='3'` bovenaan het script
+2. `sw.js` — `huishoudboek-v3`
 
 ## Nooit in deze repo
 
