@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v10 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v11 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='10';
+var VERSIE='11';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -1122,6 +1122,10 @@ function periode(n,op){
   return {van:iso(van),tot:iso(new Date(vol.getFullYear(),vol.getMonth(),vol.getDate()-1)),volgende:iso(vol),n:n||0};
 }
 function periodeVan(d){return periode(0,d)}
+/* een periode heet naar het salaris waar hij mee begint, zoals op je afschrift */
+function salarisNaam(per){return 'Salaris '+dag(per.van).toLocaleDateString('nl-NL',{month:'long'})+(per.van.slice(0,4)!==today().slice(0,4)?' '+per.van.slice(0,4):'')}
+function periodeKort(per){function k(d){return dag(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}).replace('.','')}return k(per.van)+' – '+k(per.tot)}
+function periodeNummer(d){var v=periodeVan(d).van;for(var n=-60;n<=24;n++)if(periode(n).van===v)return n;return 0}
 function periodeNaam(per){
   function kort(d){return dag(d).toLocaleDateString('nl-NL',{day:'numeric',month:'long'})}
   return kort(per.van)+' – '+kort(per.tot);
@@ -1227,9 +1231,9 @@ function pijlerRegel(id,q,schuif){
 }
 function perNav(){
   var per=periode(ui.per||0), n=per.n, rest=dagenTot(per.volgende);
-  var sub=!n?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je salaris ('+datum(per.volgende)+')':n===-1?'vorige periode':n===1?'volgende periode':n<0?(-n)+' periodes terug':'over '+n+' periodes';
+  var sub=periodeKort(per)+' · '+(!n?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je volgende salaris':n===-1?'vorige periode':n===1?'volgende periode':n<0?(-n)+' periodes terug':'over '+n+' periodes');
   return '<div class="mnav"><button class="icon-btn" data-act="per" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
-    + '<div style="text-align:center"><div class="mn" style="font-size:17px;text-transform:none">'+esc(periodeNaam(per))+'</div><div class="sub">'+esc(sub)+'</div></div>'
+    + '<div style="text-align:center"><div class="mn" style="font-size:18px;text-transform:none">'+esc(salarisNaam(per))+'</div><div class="sub">'+esc(sub)+'</div></div>'
     + '<button class="icon-btn" data-act="per" data-d="1" aria-label="Volgende periode">'+svg(P.rechts)+'</button></div>'
     + (n?'<button class="chip" data-act="per" data-d="0" style="margin-top:10px">Terug naar nu</button>':'');
 }
@@ -1272,7 +1276,7 @@ function vHome(){
 }
 function pijlerForm(){
   var id=ui.pijler, st=pijlerStaat(periode(ui.per||0)), q=st.r[id], x=PIJ[id], cls=pijlerKlasse(id,q,st.schuif), h=kop(x.n);
-  h+='<div class="sub" style="text-align:center;margin-top:-2px">'+esc(periodeNaam(st.per))+'</div><div class="groring">'+ring(q.pct,190,cls,'<b>'+(S.hide?'••':Math.round(q.pct*100)+'%')+'</b><span>'+(id==='vast'?'afgeschreven':id==='sparen'?'van je doel':'uitgegeven')+'</span>')+'</div>';
+  h+='<div class="sub" style="text-align:center;margin-top:-2px">'+esc(salarisNaam(st.per)+' · '+periodeKort(st.per))+'</div><div class="groring">'+ring(q.pct,190,cls,'<b>'+(S.hide?'••':Math.round(q.pct*100)+'%')+'</b><span>'+(id==='vast'?'afgeschreven':id==='sparen'?'van je doel':'uitgegeven')+'</span>')+'</div>';
   h+='<div class="drie2"><div class="regel"><div class="k">'+(id==='vast'?'Deze maand':id==='sparen'?'Doel':'Mag')+'</div><div class="v">'+eur(q.budget,1)+'</div><div class="s">'+(st.ink&&!S.hideInk?Math.round(q.budget/st.ink*100)+'% van je inkomen':'')+'</div></div>'
     + '<div class="regel"><div class="k">'+(id==='sparen'?'Gespaard':'Tot nu')+'</div><div class="v">'+eur(q.gedaan,1)+'</div></div>'
     + '<div class="regel"><div class="k">'+(id==='sparen'?(q.gedaan<q.budget?'Nog te gaan':'Boven je doel'):q.gedaan>q.budget+0.005?'Te veel':'Nog')+'</div><div class="v" style="color:'+(q.gedaan>q.budget+0.005&&id!=='sparen'?'var(--clay)':'var(--sand)')+'">'+eur(Math.abs(q.budget-q.gedaan),1)+'</div></div></div>';
@@ -1341,7 +1345,7 @@ function terugNaarSparen(){ui.pijler='sparen';setTimeout(function(){openPijler('
 
 function inkomenForm(){
   var per=periode(ui.per||0), eigen=S.inkPer[per.van]!=null, d=ui.draft, h=kop('Inkomen');
-  h+='<div class="sub" style="margin:-2px 0 6px">'+esc(periodeNaam(per))+'</div>';
+  h+='<div class="sub" style="margin:-2px 0 6px">'+esc(salarisNaam(per)+' · '+periodeKort(per))+'</div>';
   h+='<div class="label">Wat kreeg je in deze periode binnen?</div><div class="eur groot"><input class="field groot" id="ip_b" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'"></div>';
   h+='<button class="schakel'+(d.std?' on':'')+'" data-act="ipstd" style="margin-top:12px"><span>Ook als standaard voor volgende periodes</span><i></i></button>';
   h+='<div class="note">Standaard nu: '+(S.hh.inkomen?eurInk(S.hh.inkomen):'nog niets')+'. Periodes waar je niets apart invult, rekenen daarmee. Dit blijft op je telefoon en gaat niet mee in je back-up.</div>';
@@ -1454,7 +1458,7 @@ function postForm(){
     komt.concat(gedaan).forEach(function(x){
       var bev=bevestigd(p,x.pl), toek=x.d>t;
       h+='<button class="rij" data-act="afrij" data-pl="'+x.pl+'"'+(d.afPl===x.pl&&d.afOpen?' style="background:var(--surface2)"':'')+'><div class="t"><div class="n" style="font-size:14.5px">'+esc(datum(x.d))+'</div>'
-        + '<div class="m">'+(toek?'al afgegaan? tik hier':'periode '+esc(periodeNaam(periodeVan(x.d))))+'</div></div>'
+        + '<div class="m">'+(toek?'al afgegaan? tik hier':'hoort bij '+esc(salarisNaam(periodeVan(x.d)).toLowerCase()))+'</div></div>'
         + '<div class="b"><div class="a">'+eur(x.b)+'</div><div class="p"><span class="tag '+(bev?'af">✓ bevestigd':toek?'nog">komt nog':'af">afgeschreven')+'</span></div></div></button>';
     });
     h+='</div>';
@@ -1566,7 +1570,7 @@ function zetAfgeschreven(){
   var was=bevestigd(p,pl)&&p.afw[pl]===D;
   p.afw=p.afw||{}; p.afw[pl]=D;
   d.afOpen=false; d.afPl=''; save();
-  d.afMelding=(was?'Stond er al: ':'✓ ')+p.naam+' van '+datum(D)+' ('+eur(bedragOp(p,pl))+') telt mee in de periode '+periodeNaam(periodeVan(D))+'.';
+  d.afMelding=(was?'Stond er al: ':'✓ ')+p.naam+' van '+datum(D)+' ('+eur(bedragOp(p,pl))+') telt mee bij '+salarisNaam(periodeVan(D)).toLowerCase()+' ('+periodeKort(periodeVan(D))+').';
   render(); herteken();
 }
 
@@ -1635,6 +1639,8 @@ function bewaarLos(nog){
   S.begonnen=true; save();
   if(nog){ui.draft={bedragTxt:'',cat:d.cat,oms:'',d:d.d,catHand:false};ui.catOpen=false;herteken();render();
     setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},50);return}
+  var dn=periodeNummer(d.d||today());
+  if(dn!==(ui.per||0)){ui.per=dn;var dp=periode(dn);ui.msg='Opgeslagen bij '+salarisNaam(dp).toLowerCase()+' ('+periodeKort(dp)+'), want '+datum(d.d)+' valt in die periode.'}
   closeSheet(); render();
   if(ui.pijler&&ui.tab==='home'){var pj=ui.pijler;setTimeout(function(){openPijler(pj)},30)}
 }
@@ -1698,7 +1704,7 @@ function instellingenForm(){
   h+='<div class="label">Salaris</div><div class="stepper"><span class="sl">Komt op de</span><span class="sc"><button data-act="betaaldag" data-d="-1">−</button><span class="sn">'+(+S.hh.betaaldag||25)+'e</span><button data-act="betaaldag" data-d="1">+</button></span></div>'
     + '<button class="schakel'+(S.hh.weekend!==false?' on':'')+'" data-act="weekend" style="margin-top:8px"><span>Valt het in het weekend: de vrijdag ervoor</span><i></i></button>'
     + '<div class="label">Vaste lasten in het weekend</div><div class="chips">'+[['voor','Vrijdag ervoor'],['na','Maandag erna'],['geen','Niet schuiven']].map(function(o){return '<button class="chip'+((S.hh.vastWeekend||'voor')===o[0]?' on':'')+'" data-act="vastweekend" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'
-    + '<div class="note">Het huisje rekent van salaris tot salaris. Nu: '+esc(periodeNaam(periode(0)))+'.</div>';
+    + '<div class="note">Het huisje rekent van salaris tot salaris. Nu: '+esc(salarisNaam(periode(0)).toLowerCase()+', '+periodeNaam(periode(0)))+'.</div>';
   h+='<div class="label">Privacy</div><button class="schakel'+(S.hideInk?' on':'')+'" data-act="hideink"><span>Inkomen verbergen (het oogje bovenin)</span><i></i></button>'
     + '<button class="schakel'+(S.hide?' on':'')+'" data-act="hide" style="margin-top:8px"><span>Alle bedragen verbergen</span><i></i></button>'
     + '<button class="schakel'+(S.pin?' on':'')+'" data-act="pinzet" style="margin-top:8px"><span>'+(S.pin?'Pincode staat aan':'Pincode van vier cijfers')+'</span><i></i></button>'
