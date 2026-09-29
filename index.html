@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v13 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v16 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='13';
+var VERSIE='16';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -447,6 +447,16 @@ var CATS=[
   {id:'overig',    n:'Overig',                 c:'#66736D', i:'puntjes'}
 ];
 var CAT={}; CATS.forEach(function(c){CAT[c.id]=c});
+var BASIS_CATS=CATS.length;
+/* soorten die je zelf maakt komen achter de vaste rij; ze tellen als uitgave,
+   of als vaste last als je er een vaste last van maakt */
+var EIGEN_ICONEN=['puntjes','kar','huis','auto','cadeau','handhart','poot','kind','bestek','shirt','vliegtuig','mobiel','hamer','schild','bon','spaarpot'];
+var EIGEN_KLEUREN=['#6E8B3D','#B5651D','#3D7EA6','#A34F8C','#C9A227','#4E9A8A','#8C5A3C','#7A6FB0'];
+function zetEigenCats(){
+  CATS.length=BASIS_CATS;
+  Object.keys(CAT).forEach(function(k){if(k.indexOf('e_')===0)delete CAT[k]});
+  (S.eigenCats||[]).forEach(function(c){CATS.push(c);CAT[c.id]=c});
+}
 /* bij losse uitgaven staan deze vooraan, die koop je het vaakst */
 var LOS_EERST=['boodsch','uiteten','brandstof','klus','kleding','verzorging','zorg','kinder','cadeau','vakantie','huisdier','ov','goeddoel','overig'];
 
@@ -514,7 +524,7 @@ var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'
 
 /* ───────────────────────────── opslag ───────────────────────────── */
 var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0,betaaldag:25,weekend:true}, posten:[], uitgaven:[],
-       tipsWeg:{}, hide:false, hideInk:false, inkPer:{}, spaarRek:{naam:'Spaarrekening',saldo:null,datum:''}, spaarMut:[], snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
+       tipsWeg:{}, hide:false, hideInk:false, inkPer:{}, spaarRek:{naam:'Spaarrekening',saldo:null,datum:''}, spaarMut:[], terug:[], eigenCats:[], voorSoorten:null, snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
 var ui={tab:'home', maand:'', sort:'cat', zoek:'', sheet:null, draft:null, catOpen:false,
         msg:'', toonWeg:false};
 
@@ -529,19 +539,22 @@ function load(){
       if(Array.isArray(d.uitgaven))S.uitgaven=d.uitgaven;
       if(d.spaarRek)S.spaarRek=d.spaarRek;
       if(Array.isArray(d.spaarMut))S.spaarMut=d.spaarMut;
+      if(Array.isArray(d.terug))S.terug=d.terug;
       if(d.tipsWeg)S.tipsWeg=d.tipsWeg;
       S.hide=!!d.hide; S.hideInk=!!d.hideInk; S.begonnen=!!d.begonnen;
       if(Array.isArray(d.snaps))S.snaps=d.snaps;
       if(d.lastBackup)S.lastBackup=d.lastBackup;
       if(typeof d.pin==='string')S.pin=d.pin;
       if(d.spaar)S.spaar=+d.spaar;
+      if(Array.isArray(d.eigenCats))S.eigenCats=d.eigenCats;
+      if(Array.isArray(d.voorSoorten))S.voorSoorten=d.voorSoorten;
       if(d.inkPer)S.inkPer=d.inkPer;
     }
   }catch(e){}
 }
 function save(){
   try{
-    localStorage.setItem(KEY,JSON.stringify({v:1,hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,
+    localStorage.setItem(KEY,JSON.stringify({v:1,hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,terug:S.terug,eigenCats:S.eigenCats,voorSoorten:S.voorSoorten,
       hide:S.hide,hideInk:S.hideInk,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab,pin:S.pin,spaar:S.spaar,inkPer:S.inkPer}));
   }catch(e){ui.msg='Opslaan lukte niet: de opslag van de browser is vol of uitgezet.'}
 }
@@ -668,7 +681,7 @@ function maandStaat(k){
   S.posten.forEach(function(p){
     afschrijvingen(p,k+'-01',laatsteDag(k)).forEach(function(x){vast.push({p:p,d:x.d,b:x.b,pl:x.pl});tv+=x.b;perCat[p.cat]=(perCat[p.cat]||0)+x.b});
   });
-  S.uitgaven.forEach(function(u){if(ym(u.d)===k){los.push(u);tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b}});
+  S.uitgaven.forEach(function(u){if(!u.voor&&ym(u.d)===k){los.push(u);tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b}});
   vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
   los.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
   return {vast:vast,los:los,tv:tv,tl:tl,tot:tv+tl,perCat:perCat};
@@ -684,11 +697,11 @@ function losGemiddeld(){
   var r={},n=0,k=ym(today());
   for(var i=1;i<=3;i++){
     var mk=schuifMaand(k,-i),heeft=false;
-    S.uitgaven.forEach(function(u){if(ym(u.d)===mk){heeft=true;r[u.cat]=(r[u.cat]||0)+u.b}});
+    S.uitgaven.forEach(function(u){if(!u.voor&&ym(u.d)===mk){heeft=true;r[u.cat]=(r[u.cat]||0)+u.b}});
     if(heeft)n++;
   }
   if(n){for(var c in r)r[c]/=n;return {r:r,n:n}}
-  S.uitgaven.forEach(function(u){if(ym(u.d)===k)r[u.cat]=(r[u.cat]||0)+u.b});
+  S.uitgaven.forEach(function(u){if(!u.voor&&ym(u.d)===k)r[u.cat]=(r[u.cat]||0)+u.b});
   return {r:r,n:0};
 }
 function binnenkort(dagen){
@@ -1047,7 +1060,7 @@ function kolommen(filter){
   /* zes periodes naast elkaar, eindigend bij de gekozen */
   var n0=ui.per||0, kols=[], max=1;
   for(var i=5;i>=0;i--){var p=periode(n0-i),sm=0;
-    S.uitgaven.forEach(function(u){if(u.d>=p.van&&u.d<=p.tot&&filter(u))sm+=u.b});
+    S.uitgaven.forEach(function(u){if(!u.voor&&u.d>=p.van&&u.d<=p.tot&&filter(u))sm+=u.b});
     kols.push({n:n0-i,v:sm,l:dag(p.tot).toLocaleDateString('nl-NL',{month:'short'}).replace('.','')});if(sm>max)max=sm}
   var h='<div class="card chart" style="margin-top:10px" role="img" aria-label="Per salarisperiode"><div class="cols">';
   kols.forEach(function(c){h+='<button class="col'+(c.n===n0?'':' dimmed')+'" data-act="kiesper" data-v="'+c.n+'"><span class="tot">'+(c.v?eur(c.v,1).replace('€ ','€'):'')+'</span><span class="stk" style="height:calc(100% - 18px)">'+(c.v?'<span class="sl" style="height:'+(c.v/max*100).toFixed(1)+'%;border-radius:4px 4px 2px 2px"></span>':'')+'</span></button>'});
@@ -1056,14 +1069,15 @@ function kolommen(filter){
 function losLijst(los){
   var h='<div class="card">';
   los.forEach(function(u){
-    h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+(u.oms?' · '+esc(CAT[u.cat].n):'')+'</div></div>'
+    h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+(u.oms?' · '+esc(CAT[u.cat].n):'')+(u.voor?' <span class="tag nog">voor '+esc(VOORNAAM[u.voor]||'ander')+'</span>':'')+'</div></div>'
       + '<div class="b"><div class="a">'+eur(u.b)+'</div></div></button>';
   });
   return h+'</div>';
 }
 function vUitgaven(){
   var per=periode(ui.per||0), t=today(), h=perNav();
-  var los=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+  var alles=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+  var los=alles.filter(function(u){return !u.voor}), voor=alles.filter(function(u){return u.voor});
   var tl=0,perCat={}; los.forEach(function(u){tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b});
   var eindDag=t<per.tot?t:per.tot, dagen=Math.max(1,Math.round((dag(eindDag)-dag(per.van))/86400000)+1);
   h+='<div class="drie"><div class="kpi"><div class="k">Uitgegeven</div><div class="v">'+eur(tl,1)+'</div></div>'
@@ -1081,6 +1095,8 @@ function vUitgaven(){
   }
   h+='<div class="h2"><h2>Wat je uitgaf</h2><button class="r" data-act="nieuwlos">+ toevoegen</button></div>';
   h+=los.length?losLijst(los):'<div class="card"><div class="leeg">Nog niets in deze periode. Boodschappen, tanken, uit eten: tik op + en vul het bedrag in.</div></div>';
+  if(voor.length){var vs=0;voor.forEach(function(u){vs+=u.b});
+    h+='<div class="h2"><h2>Voorgeschoten</h2><span class="r">'+eur(vs,1)+' · telt niet mee</span></div>'+losLijst(voor)}
   h+='<button class="btn outline klein" data-act="vastperiode">Vaste lasten van deze periode bekijken</button>';
   h+='<button class="btn outline klein" data-act="jaaropen">'+svg(P.printer).replace('<svg','<svg width="18" height="18" style="vertical-align:-3px;margin-right:8px"')+'Jaaroverzicht '+per.van.slice(0,4)+'</button>';
   return h;
@@ -1148,7 +1164,7 @@ function staatTussen(van,tot){
     if(!isPer){afschrijvingen(p,van,tot).forEach(function(x){vast.push({p:p,d:x.d,b:x.b,pl:x.pl})});return}
     afschrijvingen(p,ruim1,ruim2).forEach(function(x){if(vastPeriodeVan(p,x.pl)===van)vast.push({p:p,d:x.d,b:x.b,pl:x.pl})});
   });
-  S.uitgaven.forEach(function(u){if(u.d>=van&&u.d<=tot)los.push(u)});
+  S.uitgaven.forEach(function(u){if(!u.voor&&u.d>=van&&u.d<=tot)los.push(u)});
   vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
   return {vast:vast,los:los};
 }
@@ -1189,6 +1205,59 @@ function nogTerug(){
 /* inkomen verschilt per maand: per periode in te stellen, anders het standaardbedrag */
 function inkomenVan(per){var v=S.inkPer&&S.inkPer[per.van];return v!=null?+v:(+S.hh.inkomen||0)}
 /* alles wat vast is telt bij de vaste lasten, behalve vaste spaaropdrachten */
+/* ───────────────────────────── voorgeschoten ─────────────────────────────
+   Wat je voor een ander betaalt (materiaal voor een klus) is niet van jou.
+   Het telt niet mee in je cirkels; de app houdt bij wat je nog terugkrijgt. */
+var VOOR_BASIS=[{id:'klus',n:'Klussen'},{id:'telefoon',n:'Telefoons'},{id:'vlees',n:'Vlees (samen slachten)'},{id:'ander',n:'Iets anders'}];
+function voorLijst(){return S.voorSoorten&&S.voorSoorten.length?S.voorSoorten:VOOR_BASIS}
+function voorNaam(k){var x=voorLijst().filter(function(v){return v.id===k})[0];return x?x.n:'iets anders'}
+var VOORNAAM=new Proxy({},{get:function(o,k){return voorNaam(k).toLowerCase()}});
+function voorSoort(v){return v===true?'klus':v}
+function voorStand(soort){
+  var v=0,t=0;
+  S.uitgaven.forEach(function(u){if(u.voor&&(!soort||voorSoort(u.voor)===soort))v+=u.b});
+  (S.terug||[]).forEach(function(x){if(!soort||(x.voor||'klus')===soort)t+=x.b});
+  return {voor:v,terug:t,open:Math.max(0,v-t)};
+}
+function voorForm(){
+  var vs=voorStand(), h=kop('Voorgeschoten');
+  h+='<div class="drie2"><div class="regel"><div class="k">Voorgeschoten</div><div class="v">'+eur(vs.voor,1)+'</div></div>'
+    + '<div class="regel"><div class="k">Terug gekregen</div><div class="v" style="color:var(--accent)">'+eur(vs.terug,1)+'</div></div>'
+    + '<div class="regel"><div class="k">Nog terug</div><div class="v" style="color:'+(vs.open?'var(--saffron)':'var(--sand)')+'">'+eur(vs.open,1)+'</div></div></div>';
+  h+='<div class="card" style="margin-top:10px">';
+  voorLijst().map(function(v){return v.id}).forEach(function(k){var x=voorStand(k);if(!x.voor&&!x.terug)return;var meer=x.terug-x.voor>0.005;
+    h+='<div class="rij" style="min-height:0"><div class="t"><div class="n">'+esc(voorNaam(k))+'</div><div class="m">voorgeschoten '+eur(x.voor,1)+' · terug '+eur(x.terug,1)+'</div>'+(meer?'<div class="m" style="color:var(--saffron)">'+eur(x.terug-x.voor,1)+' meer terug dan je invulde: vul in wat je zelf betaalde</div>':'')+'</div><div class="b"><div class="a" style="color:'+(x.open?'var(--saffron)':'var(--accent)')+'">'+(x.open?'nog '+eur(x.open,1):meer?'?':'✓ rond')+'</div></div></div>'});
+  h+='</div><div class="note">Geld dat je voorschiet, voor een klus of een telefoon, telt niet mee bij je uitgaven. Krijg je het terug, contant of via de bank, vul het dan hier in.</div>';
+  h+='<div class="twee" style="margin-top:12px"><button class="btn klein" data-act="terugnieuw" style="margin:0">+ Terug gekregen</button><button class="btn outline klein" data-act="nieuwvoor" style="margin:0">+ Voorgeschoten</button></div>';
+  var tl=(S.terug||[]).slice().sort(function(a,b){return a.d<b.d?1:-1});
+  if(tl.length){h+='<div class="label">Terug gekregen</div><div class="card">';
+    tl.forEach(function(x){h+='<button class="rij" data-act="terugrij" data-id="'+x.id+'">'+ico('sparen')+'<div class="t"><div class="n">'+esc(x.oms||'Terug gekregen')+'</div><div class="m">'+esc(datum(x.d))+' · '+(x.hoe==='bank'?'via de bank':'contant')+' · '+esc(voorNaam(x.voor||'klus').toLowerCase())+'</div></div><div class="b"><div class="a" style="color:var(--accent)">+ '+eur(x.b)+'</div></div></button>'});
+    h+='</div>';}
+  var vl=S.uitgaven.filter(function(u){return u.voor}).sort(function(a,b){return a.d<b.d?1:-1});
+  if(vl.length)h+='<div class="label">Voorgeschoten</div>'+losLijst(vl.slice(0,40));
+  return h;
+}
+function openVoor(){ui.sheet='voor';openSheet(voorForm())}
+function terugForm(){
+  var d=ui.draft, h=kop(d.id?'Terug gekregen':'Geld terug gekregen');
+  h+='<div class="label">Bedrag</div><div class="eur groot"><input class="field groot" id="tg_b" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'"></div>';
+  h+='<div class="label">Van wie (mag leeg)</div><input class="field" id="tg_o" placeholder="Bijvoorbeeld: L. Rebbik, materiaal dak" value="'+esc(d.oms)+'">';
+  h+='<div class="label">Datum</div><input class="field" type="date" id="tg_d" value="'+esc(d.d)+'">';
+  h+='<div class="label">Waarvoor?</div><div class="chips">'+voorLijst().map(function(v){return v.id}).map(function(k){return '<button class="chip'+((d.voor||'klus')===k?' on':'')+'" data-act="tgvoor" data-v="'+k+'">'+esc(voorNaam(k))+'</button>'}).join('')+'<button class="chip" data-act="voornieuw" style="color:var(--accent)">+ Eigen</button></div>';
+  h+='<div class="label">Hoe?</div><div class="chips"><button class="chip'+(d.hoe!=='bank'?' on':'')+'" data-act="tghoe" data-v="contant">Contant</button><button class="chip'+(d.hoe==='bank'?' on':'')+'" data-act="tghoe" data-v="bank">Via de bank</button></div>';
+  h+='<button class="btn" data-act="tgbewaar">Bewaren</button>';
+  if(d.id)h+='<button class="btn rood" data-act="tgweg">Verwijderen</button>';
+  return h;
+}
+function leesTerug(){var d=ui.draft;if(!d)return;var a=document.getElementById('tg_b'),b=document.getElementById('tg_o'),c=document.getElementById('tg_d');if(a)d.bedragTxt=a.value;if(b)d.oms=b.value;if(c)d.d=c.value}
+function openTerug(id){
+  var x=id?(S.terug||[]).filter(function(y){return y.id===id})[0]:null;
+  if(ui.sheet==='voor'){bladGeduwd=false;hideSheet()}
+  ui.draft=x?{id:x.id,bedragTxt:eurTekst(x.b),oms:x.oms||'',d:x.d,hoe:x.hoe,voor:x.voor||'klus'}:{bedragTxt:'',oms:'',d:today(),hoe:'contant',voor:'klus'};
+  ui.sheet='terug';openSheet(terugForm());
+  if(!x)setTimeout(function(){var e=document.getElementById('tg_b');if(e)e.focus()},250);
+}
+
 function pijlerPost(p){return p.pijler||(p.cat==='sparen'?'sparen':'vast')}
 function pijlerStaat(per){
   var t=today(), ms=staatTussen(per.van,per.tot), ink=inkomenVan(per), voorbij=per.tot<t;
@@ -1283,6 +1352,8 @@ function vHome(){
     st.schuif.forEach(function(x){h+='<div class="sr">'+eur(x.b)+' van <b>'+esc(PIJ[x.van].n)+'</b> naar <b>'+esc(PIJ[x.naar].n)+'</b></div>'});
     h+='</div>';
   }
+  var vst=voorStand();
+  if(vst.open>0.005)h+='<button class="melding" data-act="voorgeschoten" style="margin-top:10px;width:100%;text-align:left"><div><b>Voorgeschoten: nog '+eur(vst.open)+' terug te krijgen</b>'+(function(){var a=voorStand('klus').open,t=voorStand('telefoon').open;return (a&&t)?'<br><span class="dim">klussen '+eur(a,1)+' · telefoons '+eur(t,1)+'</span>':''})()+'<br><span class="dim">Telt niet mee bij je uitgaven. Tik om in te vullen wat je terugkreeg.</span></div></button>';
   if(st.nood>0.005){var ntr=nogTerug();h+='<button class="melding" data-act="pijler" data-v="sparen" style="border-color:var(--clay);margin-top:10px;width:100%;text-align:left"><div><b>Noodgreep: '+eur(st.nood)+' van je spaarrekening gehaald</b><br><span class="dim">Dat is geen inkomen. '+(ntr.b>0.005?'Nog terug te zetten: '+eur(ntr.b)+'.':'')+'</span></div></button>'}
   if(st.krap)h+='<div class="melding" style="border-color:var(--clay);margin-top:10px"><div>Na je vaste lasten, vervoer en sparen blijft er niets over voor uitgaven. Kijk bij Besparen, of kies een lager spaardoel.</div></div>';
   h+='<div class="drie2"><button class="regel" data-act="inkomen" style="text-align:left"><div class="k">Inkomen ✎'+(S.inkPer[per.van]!=null?'':' <span style="font-size:10px">(standaard)</span>')+'</div><div class="v">'+eurInk(st.ink,1)+'</div></button>'
@@ -1452,7 +1523,13 @@ function catKiezer(sel,volgorde){
   var h='<button class="catkeus" data-act="catopen">'+ico(sel)+'<span class="t">'+esc(CAT[sel].n)+'</span><span class="w">'+(ui.catOpen?'klaar':'wijzig')+'</span></button>';
   if(ui.catOpen){
     var lijst=volgorde?volgorde.concat(CATS.map(function(c){return c.id}).filter(function(i){return volgorde.indexOf(i)<0})):CATS.map(function(c){return c.id});
-    h+='<div class="catgrid">'+lijst.map(function(id){return '<button class="'+(id===sel?'on':'')+'" data-act="catkies" data-v="'+id+'">'+ico(id)+'<span>'+esc(CAT[id].n)+'</span></button>'}).join('')+'</div>';
+    h+='<div class="catgrid">'+lijst.map(function(id){return '<button class="'+(id===sel?'on':'')+'" data-act="catkies" data-v="'+id+'">'+ico(id)+'<span>'+esc(CAT[id].n)+'</span></button>'}).join('')
+      + '<button data-act="catnieuw"><span class="ico" style="background:var(--surface2);color:var(--accent)">'+svg(P.plus)+'</span><span style="color:var(--accent)">Eigen soort</span></button></div>';
+    if(ui.nieuweCat){var nc=ui.nieuweCat;
+      h+='<div class="card" style="padding:12px;margin-top:8px"><div class="label" style="margin-top:0">Naam van je eigen soort</div><input class="field" id="nc_naam" placeholder="Bijvoorbeeld: Stier slachten" value="'+esc(nc.n||'')+'">'
+        + '<div class="label">Icoontje</div><div class="catgrid">'+EIGEN_ICONEN.map(function(ic){return '<button class="'+(nc.i===ic?'on':'')+'" data-act="ncicoon" data-v="'+ic+'"><span class="ico" style="background:'+nc.c+'">'+svg(P[ic])+'</span></button>'}).join('')+'</div>'
+        + '<div class="twee" style="margin-top:10px"><button class="btn outline klein" data-act="ncdicht" style="margin:0">Annuleren</button><button class="btn klein" data-act="ncbewaar" style="margin:0">Toevoegen</button></div></div>';
+    }
   }
   return h;
 }
@@ -1569,6 +1646,8 @@ function herteken(){
   else if(ui.sheet==='los'){leesLosForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+losForm()}
   else if(ui.sheet==='inkomen'){var ib=document.getElementById('ip_b');if(ib)ui.draft.bedragTxt=ib.value;el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+inkomenForm()}
   else if(ui.sheet==='spaar'){leesSpaarForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+spaarForm()}
+  else if(ui.sheet==='voor'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+voorForm()}
+  else if(ui.sheet==='terug'){leesTerug();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+terugForm()}
   else if(ui.sheet==='pijler'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+pijlerForm()}
   else if(ui.sheet==='jaar'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+jaarForm()}
   else if(ui.sheet==='instellingen'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+instellingenForm()}
@@ -1634,6 +1713,8 @@ function losForm(){
   h+='<div class="label">Soort</div>'+catKiezer(d.cat,LOS_EERST);
   h+='<div class="label">Omschrijving (mag leeg)</div><input class="field" id="l_oms" placeholder="Bijvoorbeeld: Lidl, weekboodschappen" value="'+esc(d.oms)+'" autocomplete="off">';
   h+='<div class="label">Datum</div><input class="field" type="date" id="l_d" value="'+esc(d.d)+'">';
+  h+='<div class="label">Voorgeschoten? Dan krijg je het terug</div><div class="chips">'+[['','Nee, van mij']].concat(voorLijst().map(function(v){return [v.id,v.n.replace(' (samen slachten)','')]})).map(function(o){return '<button class="chip'+((voorSoort(d.voor)||'')===o[0]?' on':'')+'" data-act="voorkies" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'<button class="chip" data-act="voornieuw" style="color:var(--accent)">+ Eigen</button></div>'
+    + '<div class="note">Voorgeschoten geld telt niet mee bij je uitgaven.</div>';
   h+='<button class="btn" data-act="losbewaar">Bewaren</button>';
   if(nieuw)h+='<button class="btn outline" data-act="losbewaarnog">Bewaren en nog een</button>';
   else h+='<button class="btn rood" data-act="losweg">Verwijderen</button>';
@@ -1648,7 +1729,7 @@ function openLos(id,cat){
   if(ui.sheet==='pijler'){bladGeduwd=false;hideSheet()}
   var u=id?S.uitgaven.filter(function(x){return x.id===id})[0]:null;
   var pr=periode(ui.per||0), t0=today(), dflt=t0>=pr.van&&t0<=pr.tot?t0:(t0>pr.tot?pr.tot:pr.van);
-  ui.draft=u?{id:u.id,bedragTxt:eurTekst(u.b),cat:u.cat,oms:u.oms||'',d:u.d,catHand:true}:{bedragTxt:'',cat:cat||'boodsch',oms:'',d:dflt,catHand:!!cat};
+  ui.draft=u?{id:u.id,bedragTxt:eurTekst(u.b),cat:u.cat,oms:u.oms||'',d:u.d,catHand:true,voor:voorSoort(u.voor)||''}:{bedragTxt:'',cat:cat||'boodsch',oms:'',d:dflt,catHand:!!cat,voor:cat==='klus'?'klus':''};
   ui.sheet='los'; ui.catOpen=!u;
   openSheet(losForm());
   if(!u)setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},250);
@@ -1658,8 +1739,8 @@ function bewaarLos(nog){
   var d=ui.draft,b=getal(d.bedragTxt);
   if(!(b>0)){alert('Vul een bedrag in, bijvoorbeeld 23,40');return}
   var u=d.id?S.uitgaven.filter(function(x){return x.id===d.id})[0]:null;
-  if(u){u.b=b;u.cat=d.cat;u.oms=d.oms.trim();u.d=d.d||today()}
-  else S.uitgaven.push({id:uid(),b:b,cat:d.cat,oms:d.oms.trim(),d:d.d||today()});
+  if(u){u.b=b;u.cat=d.cat;u.oms=d.oms.trim();u.d=d.d||today();if(d.voor)u.voor=d.voor;else delete u.voor}
+  else{var nu2={id:uid(),b:b,cat:d.cat,oms:d.oms.trim(),d:d.d||today()};if(d.voor)nu2.voor=d.voor;S.uitgaven.push(nu2)}
   S.begonnen=true; save();
   if(nog){ui.draft={bedragTxt:'',cat:d.cat,oms:'',d:d.d,catHand:false};ui.catOpen=false;herteken();render();
     setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},50);return}
@@ -1733,6 +1814,10 @@ function instellingenForm(){
     + '<button class="schakel'+(S.hide?' on':'')+'" data-act="hide" style="margin-top:8px"><span>Alle bedragen verbergen</span><i></i></button>'
     + '<button class="schakel'+(S.pin?' on':'')+'" data-act="pinzet" style="margin-top:8px"><span>'+(S.pin?'Pincode staat aan':'Pincode van vier cijfers')+'</span><i></i></button>'
     + '<div class="note">'+(S.pin?'Tik om de pincode weg te halen. ':'')+'Met een pincode gaat de app op slot als je hem opent, en als hij drie minuten op de achtergrond stond. De pincode gaat mee in je back-up.</div>'
+    + '<div class="label">Je eigen soorten</div>'+(function(){var e=S.eigenCats||[];if(!e.length)return '<div class="note" style="margin-top:0">Nog geen. Maak er een bij het kiezen van een soort, onder "Eigen soort".</div>';
+        return '<div class="card">'+e.map(function(c){return '<div class="rij" style="min-height:0">'+ico(c.id,1)+'<div class="t"><div class="n" style="font-size:14px">'+esc(c.n)+'</div></div><button class="x" data-act="catweg" data-v="'+c.id+'" aria-label="Weghalen">'+svg(P.kruis)+'</button></div>'}).join('')+'</div>'})()
+    + '<div class="label">Voorgeschoten voor</div><div class="card">'+voorLijst().map(function(v){return '<div class="rij" style="min-height:0"><div class="t"><div class="n" style="font-size:14px">'+esc(v.n)+'</div></div><button class="x" data-act="voorweg" data-v="'+v.id+'" aria-label="Weghalen">'+svg(P.kruis)+'</button></div>'}).join('')+'</div>'
+    + '<button class="btn outline klein" data-act="voornieuw">+ Eigen soort voorgeschoten</button>'
     + '<div class="label">Jaaroverzicht</div><button class="btn outline klein" data-act="jaaropen" style="margin-top:0">Jaaroverzicht bekijken en afdrukken</button>';
   h+='<div class="divider"></div><div class="label">Back-up</div>'
     + '<div class="note" style="margin-top:0">Alles staat alleen op dit toestel. Stuur de back-up af en toe naar jezelf, bijvoorbeeld via WhatsApp of mail. Gaat je telefoon kapot, dan zet je hem op een ander toestel hier weer terug.</div>'
@@ -1766,7 +1851,7 @@ var vraagCb=null;
 function backupTekst(){
   /* het inkomen blijft op het toestel: het gaat niet mee in de back-up */
   var hh=Object.assign({},S.hh); delete hh.inkomen;
-  return JSON.stringify({app:'huishoudboek',v:1,gemaakt:new Date().toISOString(),hh:hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,pin:S.pin||'',spaar:S.spaar});
+  return JSON.stringify({app:'huishoudboek',v:1,gemaakt:new Date().toISOString(),hh:hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,terug:S.terug,eigenCats:S.eigenCats,voorSoorten:S.voorSoorten,pin:S.pin||'',spaar:S.spaar});
 }
 function backupNaam(){var d=new Date();return 'huishoudboek-'+today()+'-'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+'.json'}
 function zetTerug(tekst){
@@ -1778,7 +1863,8 @@ function zetTerug(tekst){
       S.snaps.unshift({dag:today(),n:S.posten.length,u:S.uitgaven.length,data:backupTekst()});S.snaps=S.snaps.slice(0,5);
     }
     S.posten=d.posten; S.uitgaven=Array.isArray(d.uitgaven)?d.uitgaven:[];
-    S.spaarRek=d.spaarRek||{naam:'Spaarrekening',saldo:null,datum:''}; S.spaarMut=Array.isArray(d.spaarMut)?d.spaarMut:[];
+    S.spaarRek=d.spaarRek||{naam:'Spaarrekening',saldo:null,datum:''}; S.spaarMut=Array.isArray(d.spaarMut)?d.spaarMut:[]; S.terug=Array.isArray(d.terug)?d.terug:[];
+    if(Array.isArray(d.eigenCats))S.eigenCats=d.eigenCats; if(Array.isArray(d.voorSoorten))S.voorSoorten=d.voorSoorten; zetEigenCats();
     var ink=+S.hh.inkomen||0;
     if(d.hh)S.hh=Object.assign({volw:1,kind:0,woning:'huur'},d.hh);
     S.hh.inkomen=ink; /* wat je op dit toestel instelde, blijft staan */
@@ -1866,8 +1952,21 @@ document.addEventListener('click',function(e){
   if(act==='maandenuit'){ui.draft.maanden=null;herteken();return}
   if(act==='maandenaan'){ui.draft.maanden=ui.draft.maanden||[1,2,3,4,5,6,7,8,9,10,11,12];herteken();return}
   if(act==='mndkies'){var mv=+b.dataset.v,ma=ui.draft.maanden,ix=ma.indexOf(mv);if(ix>=0){if(ma.length>1)ma.splice(ix,1)}else ma.push(mv);herteken();return}
-  if(act==='catopen'){ui.catOpen=!ui.catOpen;herteken();return}
-  if(act==='catkies'){ui.draft.cat=b.dataset.v;ui.draft.catHand=true;ui.catOpen=false;herteken();return}
+  if(act==='catnieuw'){if(ui.sheet==='los')leesLosForm();else if(ui.sheet==='post')leesPostForm();ui.nieuweCat={n:'',i:'puntjes',c:EIGEN_KLEUREN[(S.eigenCats||[]).length%EIGEN_KLEUREN.length]};herteken();setTimeout(function(){var e=document.getElementById('nc_naam');if(e)e.focus()},50);return}
+  if(act==='ncicoon'){var ne=document.getElementById('nc_naam');if(ne)ui.nieuweCat.n=ne.value;ui.nieuweCat.i=b.dataset.v;herteken();return}
+  if(act==='ncdicht'){ui.nieuweCat=null;herteken();return}
+  if(act==='ncbewaar'){var nn=((document.getElementById('nc_naam')||{}).value||'').trim();if(!nn){alert('Geef je soort een naam.');return}
+    var nw={id:'e_'+uid(),n:nn,c:ui.nieuweCat.c,i:ui.nieuweCat.i,eigen:true};S.eigenCats=S.eigenCats||[];S.eigenCats.push(nw);zetEigenCats();save();
+    ui.draft.cat=nw.id;ui.draft.catHand=true;ui.nieuweCat=null;ui.catOpen=false;herteken();return}
+  if(act==='voornieuw'){var vn=prompt('Waarvoor schiet je geld voor? Bijvoorbeeld: Familie Marokko');if(!vn||!vn.trim())return;
+    S.voorSoorten=voorLijst().slice();var vid='v_'+uid();S.voorSoorten.push({id:vid,n:vn.trim()});save();
+    if(ui.sheet==='los'){leesLosForm();ui.draft.voor=vid}else if(ui.sheet==='terug'){leesTerug();ui.draft.voor=vid}herteken();return}
+  if(act==='voorweg'){var vw=b.dataset.v;if(S.uitgaven.some(function(u){return u.voor===vw})||(S.terug||[]).some(function(x){return x.voor===vw})){alert('Deze wordt nog gebruikt. Haal hem eerst bij die uitgaven weg.');return}
+    S.voorSoorten=voorLijst().filter(function(v){return v.id!==vw});save();herteken();return}
+  if(act==='catweg'){var cw=b.dataset.v;if(S.uitgaven.some(function(u){return u.cat===cw})||S.posten.some(function(q){return q.cat===cw})){alert('Deze soort wordt nog gebruikt. Zet die uitgaven eerst op een andere soort.');return}
+    S.eigenCats=(S.eigenCats||[]).filter(function(c){return c.id!==cw});zetEigenCats();save();herteken();return}
+  if(act==='catopen'){ui.nieuweCat=null;ui.catOpen=!ui.catOpen;herteken();return}
+  if(act==='catkies'){if(ui.sheet==='los'){leesLosForm();if(!ui.draft.id&&(!ui.draft.voor||ui.draft.voor==='klus'))ui.draft.voor=b.dataset.v==='klus'?'klus':''}ui.draft.cat=b.dataset.v;ui.draft.catHand=true;ui.catOpen=false;herteken();return}
   if(act==='pijlerkies'){leesPostForm();ui.draft.pijler=b.dataset.v===(ui.draft.cat==='sparen'?'sparen':'vast')?'':b.dataset.v;herteken();return}
   if(act==='tijduit'){leesPostForm();ui.draft.aantal=0;ui.draft.gestopt='';herteken();return}
   if(act==='tijdstop'){leesPostForm();ui.draft.aantal=0;ui.draft.gestopt=ui.draft.gestopt||today();herteken();return}
@@ -1896,6 +1995,19 @@ document.addEventListener('click',function(e){
   if(act==='ipbewaar'){var iv=getal((document.getElementById('ip_b')||{}).value);if(!(iv>0)){alert('Vul een bedrag in, bijvoorbeeld 3.400');return}
     var ipr=periode(ui.per||0);S.inkPer[ipr.van]=iv;if(ui.draft.std)S.hh.inkomen=iv;save();closeSheet();render();return}
   if(act==='ipweg'){delete S.inkPer[periode(ui.per||0).van];save();closeSheet();render();return}
+  if(act==='voorgeschoten'){openVoor();return}
+  if(act==='terugnieuw'){openTerug();return}
+  if(act==='terugrij'){openTerug(b.dataset.id);return}
+  if(act==='tgvoor'){leesTerug();ui.draft.voor=b.dataset.v;herteken();return}
+  if(act==='nieuwvoor'){openLos(null,'klus');return}
+  if(act==='tghoe'){leesTerug();ui.draft.hoe=b.dataset.v;herteken();return}
+  if(act==='tgbewaar'){leesTerug();var td=ui.draft,tb=getal(td.bedragTxt);if(!(tb>0)){alert('Vul een bedrag in, bijvoorbeeld 50');return}
+    S.terug=S.terug||[];var tx=td.id?S.terug.filter(function(y){return y.id===td.id})[0]:null;
+    var rec={b:tb,oms:(td.oms||'').trim(),d:td.d||today(),hoe:td.hoe||'contant',voor:td.voor||'klus'};
+    if(tx)Object.assign(tx,rec);else{rec.id=uid();S.terug.push(rec)}
+    save();closeSheet();render();setTimeout(openVoor,30);return}
+  if(act==='tgweg'){var tw=ui.draft;vraag('Verwijderen?','Dit terugbetaalde bedrag gaat eruit.','Verwijderen',function(){S.terug=S.terug.filter(function(y){return y.id!==tw.id});save();closeSheet();render();setTimeout(openVoor,30)});return}
+  if(act==='voorkies'){leesLosForm();ui.draft.voor=b.dataset.v||'';herteken();return}
   if(act==='spnieuw'){openSpaar(null,b.dataset.v);return}
   if(act==='spmut'){openSpaar(b.dataset.id);return}
   if(act==='spsoort'){ui.draft.soort=b.dataset.v;herteken();return}
@@ -1995,6 +2107,7 @@ document.addEventListener('input',function(e){
 
 /* ───────────────────────────── start ───────────────────────────── */
 load();
+zetEigenCats();
 if(!ui.maand)ui.maand=ym(today());
 maakHerstelpunt();
 if(!S.posten.length&&!S.uitgaven.length)ui.tab='overzicht';

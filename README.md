@@ -1,4 +1,4 @@
-# Huishoudboek · v13
+# Huishoudboek · v16
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -57,6 +57,12 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   betaalrekening) vul je in; vaste spaaropdrachten tellen vanzelf mee. Een
   noodgreep is geen inkomen: hij maakt je budget niet groter en blijft staan
   als "nog terug te zetten" tot je weer iets terugzet
+- **Voorgeschoten**: geld dat je voorschiet voor klussen of telefoons telt niet
+  mee bij je uitgaven. Terug gekregen (contant of via de bank) vul je in; het
+  huisje laat zien wat je per soort nog terugkrijgt
+- **Eigen soorten**: onder "Eigen soort" maak je een soort met naam en
+  icoontje; bij voorgeschoten zet je met "+ Eigen" iets bij (klussen, telefoons,
+  vlees en iets anders staan er al). Weghalen kan bij het tandwiel
 - **Tanken**: eigen tabblad en eigen cirkel voor tanken, laden, parkeren,
   autowas en ov. Wegenbelasting, autoverzekering en ANWB zijn vaste lasten
 - **Vaste lasten één keer per maand**: wat vanaf je betaaldag gepland staat,
@@ -86,8 +92,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='13'` bovenaan het script
-2. `sw.js` — `huishoudboek-v13`
+1. `index.html` — `var VERSIE='16'` bovenaan het script
+2. `sw.js` — `huishoudboek-v16`
 
 ## Nooit in deze repo
 
