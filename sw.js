@@ -1,4 +1,4 @@
-var CACHE = 'huishoudboek-v12';
+var CACHE = 'huishoudboek-v13';
 var FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 var WACHT = 2000; /* zo lang wachten we op het netwerk voordat we de opgeslagen versie pakken */
 

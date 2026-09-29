@@ -1,4 +1,4 @@
-# Huishoudboek · v12
+# Huishoudboek · v13
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -57,7 +57,10 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   betaalrekening) vul je in; vaste spaaropdrachten tellen vanzelf mee. Een
   noodgreep is geen inkomen: hij maakt je budget niet groter en blijft staan
   als "nog terug te zetten" tot je weer iets terugzet
-- **Vervoer**: eigen tabblad met tanken per maand en de vaste autokosten
+- **Tanken**: eigen tabblad en eigen cirkel voor tanken, laden, parkeren,
+  autowas en ov. Wegenbelasting, autoverzekering en ANWB zijn vaste lasten
+- **Vaste lasten één keer per maand**: wat vanaf je betaaldag gepland staat,
+  telt voor de maand die dan begint; zo heeft elke maand precies één Essent
 - **Bewust zo ingesteld**: vinkje per vaste last, dan geeft de app er geen tips over
 - **Jaaroverzicht**: per maand, per soort en per vaste last; afdrukken of
   opslaan als PDF
@@ -83,8 +86,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='12'` bovenaan het script
-2. `sw.js` — `huishoudboek-v12`
+1. `index.html` — `var VERSIE='13'` bovenaan het script
+2. `sw.js` — `huishoudboek-v13`
 
 ## Nooit in deze repo
 
