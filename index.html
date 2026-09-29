@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v3 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v4 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='3';
+var VERSIE='4';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -510,7 +510,7 @@ var FR={}; FREQS.forEach(function(f){FR[f.id]=f});
 var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
 /* ───────────────────────────── opslag ───────────────────────────── */
-var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0}, posten:[], uitgaven:[],
+var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0,betaaldag:25,weekend:true}, posten:[], uitgaven:[],
        tipsWeg:{}, hide:false, snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
 var ui={tab:'home', maand:'', sort:'cat', zoek:'', sheet:null, draft:null, catOpen:false,
         msg:'', toonWeg:false};
@@ -1057,8 +1057,37 @@ function pijlerVan(cat,isVast){
   for(var i=0;i<PIJLERS.length;i++)if(PIJLERS[i].cats.indexOf(cat)>=0)return PIJLERS[i].id;
   return 'uit';
 }
-function pijlerStaat(k){
-  var t=today(), ms=maandStaat(k), ink=+S.hh.inkomen||0, voorbij=k<ym(t);
+/* Het geld loopt van salaris tot salaris, niet van de 1e tot de 1e.
+   Valt de betaaldag in het weekend, dan komt het salaris de vrijdag ervoor. */
+function salarisDag(y,m){
+  var dim=new Date(y,m+1,0).getDate(), d=new Date(y,m,Math.min(+S.hh.betaaldag||25,dim));
+  if(S.hh.weekend!==false){var w=d.getDay();if(w===6)d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1);else if(w===0)d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-2)}
+  return d;
+}
+function periode(n){
+  var t=dag(today()), y=t.getFullYear(), m=t.getMonth();
+  if(t<salarisDag(y,m))m--;
+  m+=n||0;
+  var van=salarisDag(y,m), vol=salarisDag(y,m+1);
+  return {van:iso(van),tot:iso(new Date(vol.getFullYear(),vol.getMonth(),vol.getDate()-1)),volgende:iso(vol),n:n||0};
+}
+function periodeNaam(per){
+  function kort(d){return dag(d).toLocaleDateString('nl-NL',{day:'numeric',month:'long'})}
+  return kort(per.van)+' – '+kort(per.tot);
+}
+/* alles tussen twee dagen, ook als dat over twee maanden loopt */
+function staatTussen(van,tot){
+  var vast=[],los=[],k=ym(van),eind=ym(tot);
+  while(k<=eind){
+    S.posten.forEach(function(p){keren(p,k).forEach(function(d){if(d>=van&&d<=tot)vast.push({p:p,d:d,b:bedragOp(p,d)})})});
+    k=schuifMaand(k,1);
+  }
+  S.uitgaven.forEach(function(u){if(u.d>=van&&u.d<=tot)los.push(u)});
+  vast.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+  return {vast:vast,los:los};
+}
+function pijlerStaat(per){
+  var t=today(), ms=staatTussen(per.van,per.tot), ink=+S.hh.inkomen||0, voorbij=per.tot<t;
   var r={}; PIJLERS.forEach(function(x){r[x.id]={p:x,gepland:0,gedaan:0,los:0,items:[]}});
   ms.vast.forEach(function(v){var q=r[pijlerVan(v.p.cat,true)];q.gepland+=v.b;var af=voorbij||v.d<=t;if(af)q.gedaan+=v.b;
     q.items.push({soort:'vast',d:v.d,b:v.b,naam:v.p.naam,cat:v.p.cat,id:v.p.id,af:af})});
@@ -1083,13 +1112,13 @@ function pijlerStaat(k){
   PIJLERS.forEach(function(x){var q=r[x.id];q.budget=B[x.id];q.basis=basis[x.id];q.pct=q.budget?q.gedaan/q.budget:(q.gedaan?9:0);
     q.items.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0})});
   var totGedaan=0;PIJLERS.forEach(function(x){totGedaan+=r[x.id].gedaan});
-  return {k:k,r:r,ink:ink,schuif:schuif,krap:krap,over:ink-totGedaan};
+  return {per:per,r:r,ink:ink,schuif:schuif,krap:krap,over:ink-totGedaan,voorbij:voorbij};
 }
 function ring(pct,size,cls,inner){
   var sw=size>150?14:10, rr=(size-sw)/2, c=2*Math.PI*rr, v=Math.max(0,Math.min(1,pct));
   return '<div class="ring '+cls+'" style="width:'+size+'px;height:'+size+'px"><svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" aria-hidden="true">'
     + '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+rr+'" fill="none" stroke="var(--surface2)" stroke-width="'+sw+'"/>'
-    + '<circle class="rv" cx="'+size/2+'" cy="'+size/2+'" r="'+rr+'" fill="none" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+(c*v).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>'
+    + (v>0?'<circle class="rv" cx="'+size/2+'" cy="'+size/2+'" r="'+rr+'" fill="none" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+(c*v).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>':'')
     + '</svg><div class="ri">'+inner+'</div></div>';
 }
 function pijlerKlasse(id,q,schuif){
@@ -1106,9 +1135,13 @@ function pijlerRegel(id,q,schuif){
   return 'nog '+eur(q.budget-q.gedaan,1)+' over';
 }
 function vHome(){
-  var k=ym(today()), st=pijlerStaat(k), h=backupMelding();
-  var nu=new Date(), dim=new Date(nu.getFullYear(),nu.getMonth()+1,0).getDate(), rest=dim-nu.getDate();
-  h+='<div class="thuiskop"><div><div class="mn" style="text-transform:capitalize">'+esc(maandNaam(k))+'</div><div class="sub">'+(rest?'nog '+rest+' dag'+(rest===1?'':'en')+' deze maand':'laatste dag van de maand')+'</div></div></div>';
+  var per=periode(ui.per||0), st=pijlerStaat(per), h=backupMelding();
+  var rest=dagenTot(per.volgende), nu=!per.n;
+  h+='<div class="mnav"><button class="icon-btn" data-act="per" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
+    + '<div style="text-align:center"><div class="mn" style="font-size:17px;text-transform:none">'+esc(periodeNaam(per))+'</div>'
+    + '<div class="sub">'+(nu?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je salaris ('+esc(datum(per.volgende))+')':per.n===-1?'vorige periode':(-per.n)+' periodes terug')+'</div></div>'
+    + '<button class="icon-btn" data-act="per" data-d="1" aria-label="Volgende periode"'+(nu?' disabled style="opacity:.3"':'')+'>'+svg(P.rechts)+'</button></div>';
+  if(!nu)h+='<button class="chip" data-act="per" data-d="0" style="margin-top:10px">Terug naar nu</button>';
   h+='<div class="inkblok"><label for="h_ink">Mijn inkomen per maand</label><div class="eur"><input class="field" id="h_ink" inputmode="decimal" placeholder="Vul hier je netto inkomen in" value="'+(st.ink?esc(eurTekst(st.ink)):'')+'"></div></div>';
   if(!st.ink){
     h+='<div class="card" style="margin-top:12px"><div class="leeg">Vul hierboven je netto inkomen per maand in. Dan verdeelt de app het over vaste lasten, uitgaven, vervoer en sparen, en zie je per potje hoe ver je bent.</div></div>';
@@ -1133,16 +1166,17 @@ function vHome(){
   if(st.krap)h+='<div class="melding" style="border-color:var(--clay);margin-top:10px"><div>Na je vaste lasten, vervoer en sparen blijft er niets over voor uitgaven. Kijk bij Besparen, of kies een lager spaardoel.</div></div>';
   h+='<div class="drie2"><div class="regel"><div class="k">Inkomen</div><div class="v">'+eur(st.ink,1)+'</div></div>'
     + '<div class="regel"><div class="k">Tot nu weg</div><div class="v">'+eur(st.ink-st.over,1)+'</div></div>'
-    + '<div class="regel"><div class="k">'+(st.over>=0?'Nog op de rekening':'Tekort')+'</div><div class="v" style="color:'+(st.over>=0?'var(--accent)':'var(--clay)')+'">'+eur(Math.abs(st.over),1)+'</div></div></div>';
-  var nb=S.uitgaven.filter(function(u){return ym(u.d)===k&&pijlerVan(u.cat,false)==='uit'}).length;
-  if(!nb)h+='<div class="note" style="margin:10px 4px 0">Er staan deze maand nog geen boodschappen of andere uitgaven in. Zet ze bij Uitgaven, dan klopt de cirkel.</div>';
+    + '<div class="regel"><div class="k">'+(st.over>=0?(st.voorbij?'Over gebleven':'Nog op de rekening'):'Tekort')+'</div><div class="v" style="color:'+(st.over>=0?'var(--accent)':'var(--clay)')+'">'+eur(Math.abs(st.over),1)+'</div></div></div>';
+  var nb=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot&&pijlerVan(u.cat,false)==='uit'}).length;
+  if(!nb)h+='<div class="note" style="margin:10px 4px 0">Er staan in deze periode nog geen boodschappen of andere uitgaven in. Zet ze bij Uitgaven, dan klopt de cirkel.</div>';
+  h+='<div class="note" style="margin:10px 4px 0">Een periode loopt van salaris tot salaris: op de '+(+S.hh.betaaldag||25)+'e'+(S.hh.weekend!==false?', of de vrijdag ervoor als dat in het weekend valt':'')+'. <button data-act="instellingen" style="color:var(--accent);font-weight:600;font-size:12.5px">Wijzig</button></div>';
   h+='<div class="label">Spaardoel</div><div class="chips">'+[5,10,15,20].map(function(n){return '<button class="chip'+(S.spaar===n?' on':'')+'" data-act="spaar" data-v="'+n+'">'+n+'%</button>'}).join('')+'</div>';
-  h+='<div class="note" style="margin:12px 4px 0">Zo verdeelt de app: vaste lasten zoals ze deze maand afgeschreven worden; vervoer 10% van je inkomen (of meer als je vaste autokosten hoger zijn); sparen het doel dat je hierboven kiest; uitgaven is de rest. Geef je ergens te veel uit, dan gaat het eerst van wat er bij een ander potje over is, en daarna van sparen. Nooit van je vaste lasten.</div>';
+  h+='<div class="note" style="margin:12px 4px 0">Zo verdeelt de app: vaste lasten zoals ze in deze periode afgeschreven worden; vervoer 10% van je inkomen (of meer als je vaste autokosten hoger zijn); sparen het doel dat je hierboven kiest; uitgaven is de rest. Geef je ergens te veel uit, dan gaat het eerst van wat er bij een ander potje over is, en daarna van sparen. Nooit van je vaste lasten.</div>';
   return h;
 }
 function pijlerForm(){
-  var id=ui.pijler, st=pijlerStaat(ym(today())), q=st.r[id], x=PIJ[id], cls=pijlerKlasse(id,q,st.schuif), h=kop(x.n);
-  h+='<div class="groring">'+ring(q.pct,190,cls,'<b>'+(S.hide?'••':Math.round(q.pct*100)+'%')+'</b><span>'+(id==='vast'?'afgeschreven':id==='sparen'?'van je doel':'uitgegeven')+'</span>')+'</div>';
+  var id=ui.pijler, st=pijlerStaat(periode(ui.per||0)), q=st.r[id], x=PIJ[id], cls=pijlerKlasse(id,q,st.schuif), h=kop(x.n);
+  h+='<div class="sub" style="text-align:center;margin-top:-2px">'+esc(periodeNaam(st.per))+'</div><div class="groring">'+ring(q.pct,190,cls,'<b>'+(S.hide?'••':Math.round(q.pct*100)+'%')+'</b><span>'+(id==='vast'?'afgeschreven':id==='sparen'?'van je doel':'uitgegeven')+'</span>')+'</div>';
   h+='<div class="drie2"><div class="regel"><div class="k">'+(id==='vast'?'Deze maand':id==='sparen'?'Doel':'Mag')+'</div><div class="v">'+eur(q.budget,1)+'</div><div class="s">'+(st.ink?Math.round(q.budget/st.ink*100)+'% van je inkomen':'')+'</div></div>'
     + '<div class="regel"><div class="k">'+(id==='sparen'?'Gespaard':'Tot nu')+'</div><div class="v">'+eur(q.gedaan,1)+'</div></div>'
     + '<div class="regel"><div class="k">'+(q.gedaan>q.budget+0.005?'Te veel':'Nog')+'</div><div class="v" style="color:'+(q.gedaan>q.budget+0.005&&id!=='sparen'?'var(--clay)':'var(--sand)')+'">'+eur(Math.abs(q.budget-q.gedaan),1)+'</div></div></div>';
@@ -1152,9 +1186,9 @@ function pijlerForm(){
   });
   h+='<div class="note">'+esc(x.u)+'.</div>';
   if(id==='uit'||id==='vervoer')h+='<button class="btn klein" data-act="nieuwlos" data-cat="'+(id==='vervoer'?'brandstof':'boodsch')+'">+ Uitgave toevoegen</button>';
-  if(!q.items.length)h+='<div class="card" style="margin-top:14px"><div class="leeg">Hier staat deze maand nog niets in.</div></div>';
+  if(!q.items.length)h+='<div class="card" style="margin-top:14px"><div class="leeg">Hier staat in deze periode nog niets in.</div></div>';
   else{
-    h+='<div class="label">Deze maand</div><div class="card">';
+    h+='<div class="label">In deze periode</div><div class="card">';
     q.items.forEach(function(it){
       h+='<button class="rij" data-act="'+(it.soort==='vast'?'post':'los')+'" data-id="'+it.id+'">'+ico(it.cat)+'<div class="t"><div class="n">'+esc(it.naam)+'</div><div class="m">'+esc(datum(it.d))
         + (it.soort==='vast'?'<span class="tag '+(it.af?'af">afgeschreven':'nog">komt nog')+'</span>':' · '+esc(CAT[it.cat].n))+'</div></div><div class="b"><div class="a">'+eur(it.b)+'</div></div></button>';
@@ -1440,6 +1474,9 @@ function instellingenForm(){
   h+='<div class="label">Huishouden</div>'+huishoudenBlok();
   h+='<div class="label">Netto inkomen per maand, samen (mag leeg)</div><div class="eur"><input class="field" id="s_ink" inputmode="decimal" placeholder="0" value="'+(+S.hh.inkomen?esc(eurTekst(S.hh.inkomen)):'')+'"></div>'
     + '<div class="note">Alleen voor jezelf: dan zie je welk deel van je inkomen naar vaste lasten gaat, en of je misschien recht hebt op toeslag.</div>';
+  h+='<div class="label">Salaris</div><div class="stepper"><span class="sl">Komt op de</span><span class="sc"><button data-act="betaaldag" data-d="-1">−</button><span class="sn">'+(+S.hh.betaaldag||25)+'e</span><button data-act="betaaldag" data-d="1">+</button></span></div>'
+    + '<button class="schakel'+(S.hh.weekend!==false?' on':'')+'" data-act="weekend" style="margin-top:8px"><span>Valt het in het weekend: de vrijdag ervoor</span><i></i></button>'
+    + '<div class="note">Het huisje rekent van salaris tot salaris. Nu: '+esc(periodeNaam(periode(0)))+'.</div>';
   h+='<div class="label">Privacy</div><button class="schakel'+(S.hide?' on':'')+'" data-act="hide"><span>Bedragen verbergen</span><i></i></button>'
     + '<button class="schakel'+(S.pin?' on':'')+'" data-act="pinzet" style="margin-top:8px"><span>'+(S.pin?'Pincode staat aan':'Pincode van vier cijfers')+'</span><i></i></button>'
     + '<div class="note">'+(S.pin?'Tik om de pincode weg te halen. ':'')+'Met een pincode gaat de app op slot als je hem opent, en als hij drie minuten op de achtergrond stond. De pincode gaat mee in je back-up.</div>'
@@ -1547,7 +1584,7 @@ document.addEventListener('click',function(e){
   if(act==='vraagja'){document.getElementById('vraag').innerHTML='';var cb=vraagCb;vraagCb=null;if(cb)cb();return}
   if(act==='vraagnee'){document.getElementById('vraag').innerHTML='';vraagCb=null;return}
 
-  if(act==='tab'){ui.tab=b.dataset.v;ui.opruim=false;ui.ongedaan=null;if(!ui.maand)ui.maand=ym(today());save();render();window.scrollTo(0,0);return}
+  if(act==='tab'){ui.tab=b.dataset.v;if(ui.tab==='home')ui.per=0;ui.opruim=false;ui.ongedaan=null;if(!ui.maand)ui.maand=ym(today());save();render();window.scrollTo(0,0);return}
   if(act==='hide'){S.hide=!S.hide;save();render();if(ui.sheet==='instellingen')herteken();return}
   if(act==='instellingen'){openInstellingen();return}
   if(act==='close'){ui.pijler=null;closeSheet();return}
@@ -1580,6 +1617,9 @@ document.addEventListener('click',function(e){
 
   if(act==='nieuwlos'){openLos(null,b.dataset.cat);return}
   if(act==='pijler'){openPijler(b.dataset.v);return}
+  if(act==='per'){var dd=+b.dataset.d;ui.per=dd===0?0:Math.min(0,(ui.per||0)+dd);render();window.scrollTo(0,0);return}
+  if(act==='betaaldag'){S.hh.betaaldag=Math.max(1,Math.min(31,(+S.hh.betaaldag||25)+(+b.dataset.d)));save();render();herteken();return}
+  if(act==='weekend'){S.hh.weekend=S.hh.weekend===false;save();render();herteken();return}
   if(act==='los'){openLos(b.dataset.id);return}
   if(act==='losbewaar'){bewaarLos(false);return}
   if(act==='losbewaarnog'){bewaarLos(true);return}
