@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v11 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v12 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='11';
+var VERSIE='12';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -1122,8 +1122,9 @@ function periode(n,op){
   return {van:iso(van),tot:iso(new Date(vol.getFullYear(),vol.getMonth(),vol.getDate()-1)),volgende:iso(vol),n:n||0};
 }
 function periodeVan(d){return periode(0,d)}
-/* een periode heet naar het salaris waar hij mee begint, zoals op je afschrift */
-function salarisNaam(per){return 'Salaris '+dag(per.van).toLocaleDateString('nl-NL',{month:'long'})+(per.van.slice(0,4)!==today().slice(0,4)?' '+per.van.slice(0,4):'')}
+/* Een periode heet naar de maand waarin je het geld uitgeeft: het salaris van
+   25 augustus is je geld voor september (25 aug – 24 sep). */
+function salarisNaam(per){var m=dag(per.tot).toLocaleDateString('nl-NL',{month:'long'});return m.charAt(0).toUpperCase()+m.slice(1)+(per.tot.slice(0,4)!==today().slice(0,4)?' '+per.tot.slice(0,4):'')}
 function periodeKort(per){function k(d){return dag(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}).replace('.','')}return k(per.van)+' – '+k(per.tot)}
 function periodeNummer(d){var v=periodeVan(d).van;for(var n=-60;n<=24;n++)if(periode(n).van===v)return n;return 0}
 function periodeNaam(per){
@@ -1231,7 +1232,7 @@ function pijlerRegel(id,q,schuif){
 }
 function perNav(){
   var per=periode(ui.per||0), n=per.n, rest=dagenTot(per.volgende);
-  var sub=periodeKort(per)+' · '+(!n?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je volgende salaris':n===-1?'vorige periode':n===1?'volgende periode':n<0?(-n)+' periodes terug':'over '+n+' periodes');
+  var sub=periodeKort(per)+(!n?' · '+(rest===1?'morgen':'nog '+rest+' dagen tot')+' je salaris':'');
   return '<div class="mnav"><button class="icon-btn" data-act="per" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
     + '<div style="text-align:center"><div class="mn" style="font-size:18px;text-transform:none">'+esc(salarisNaam(per))+'</div><div class="sub">'+esc(sub)+'</div></div>'
     + '<button class="icon-btn" data-act="per" data-d="1" aria-label="Volgende periode">'+svg(P.rechts)+'</button></div>'
@@ -1640,7 +1641,7 @@ function bewaarLos(nog){
   if(nog){ui.draft={bedragTxt:'',cat:d.cat,oms:'',d:d.d,catHand:false};ui.catOpen=false;herteken();render();
     setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},50);return}
   var dn=periodeNummer(d.d||today());
-  if(dn!==(ui.per||0)){ui.per=dn;var dp=periode(dn);ui.msg='Opgeslagen bij '+salarisNaam(dp).toLowerCase()+' ('+periodeKort(dp)+'), want '+datum(d.d)+' valt in die periode.'}
+  if(dn!==(ui.per||0)){ui.per=dn;var dp=periode(dn);ui.msg='Opgeslagen bij '+salarisNaam(dp).toLowerCase()+' ('+periodeKort(dp)+'): '+datum(d.d)+' valt in die periode.'}
   closeSheet(); render();
   if(ui.pijler&&ui.tab==='home'){var pj=ui.pijler;setTimeout(function(){openPijler(pj)},30)}
 }

@@ -1,4 +1,4 @@
-# Huishoudboek · v11
+# Huishoudboek · v12
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -36,8 +36,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   en sparen (5 tot 20%, zelf te kiezen). Geef je bij uitgaven of vervoer te
   veel uit, dan gaat het eerst van wat er bij de ander over is en daarna van
   sparen, nooit van de vaste lasten. Tik op een cirkel voor alles wat erin zit
-- **Van salaris tot salaris**: een periode heet naar het salaris waarmee hij
-  begint ("Salaris augustus" = 25 aug – 24 sep). Het huisje rekent per periode vanaf je
+- **Van salaris tot salaris**: een periode heet naar de maand waarin je het
+  geld uitgeeft ("September" = salaris van 25 aug, 25 aug – 24 sep). Het huisje rekent per periode vanaf je
   betaaldag (standaard de 25e, in het weekend de vrijdag ervoor), met pijltjes
   om terug te kijken naar vorige periodes
 - **Al afgeschreven**: bij elke vaste last geef je aan op welke dag hij echt
@@ -83,8 +83,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='11'` bovenaan het script
-2. `sw.js` — `huishoudboek-v11`
+1. `index.html` — `var VERSIE='12'` bovenaan het script
+2. `sw.js` — `huishoudboek-v12`
 
 ## Nooit in deze repo
 
