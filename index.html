@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v9 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v10 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='9';
+var VERSIE='10';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -514,7 +514,7 @@ var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'
 
 /* ───────────────────────────── opslag ───────────────────────────── */
 var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0,betaaldag:25,weekend:true}, posten:[], uitgaven:[],
-       tipsWeg:{}, hide:false, hideInk:false, spaarRek:{naam:'Spaarrekening',saldo:null,datum:''}, spaarMut:[], snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
+       tipsWeg:{}, hide:false, hideInk:false, inkPer:{}, spaarRek:{naam:'Spaarrekening',saldo:null,datum:''}, spaarMut:[], snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
 var ui={tab:'home', maand:'', sort:'cat', zoek:'', sheet:null, draft:null, catOpen:false,
         msg:'', toonWeg:false};
 
@@ -535,13 +535,14 @@ function load(){
       if(d.lastBackup)S.lastBackup=d.lastBackup;
       if(typeof d.pin==='string')S.pin=d.pin;
       if(d.spaar)S.spaar=+d.spaar;
+      if(d.inkPer)S.inkPer=d.inkPer;
     }
   }catch(e){}
 }
 function save(){
   try{
     localStorage.setItem(KEY,JSON.stringify({v:1,hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,
-      hide:S.hide,hideInk:S.hideInk,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab,pin:S.pin,spaar:S.spaar}));
+      hide:S.hide,hideInk:S.hideInk,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab,pin:S.pin,spaar:S.spaar,inkPer:S.inkPer}));
   }catch(e){ui.msg='Opslaan lukte niet: de opslag van de browser is vol of uitgezet.'}
 }
 /* één herstelpunt per dag, de laatste vijf blijven bewaard */
@@ -1166,9 +1167,11 @@ function nogTerug(){
   return {b:open,sinds:sinds};
 }
 
+/* inkomen verschilt per maand: per periode in te stellen, anders het standaardbedrag */
+function inkomenVan(per){var v=S.inkPer&&S.inkPer[per.van];return v!=null?+v:(+S.hh.inkomen||0)}
 function pijlerPost(p){return p.pijler||pijlerVan(p.cat,true)}
 function pijlerStaat(per){
-  var t=today(), ms=staatTussen(per.van,per.tot), ink=+S.hh.inkomen||0, voorbij=per.tot<t;
+  var t=today(), ms=staatTussen(per.van,per.tot), ink=inkomenVan(per), voorbij=per.tot<t;
   var r={}; PIJLERS.forEach(function(x){r[x.id]={p:x,gepland:0,gedaan:0,los:0,items:[]}});
   ms.vast.forEach(function(v){var q=r[pijlerPost(v.p)];q.gepland+=v.b;var af=voorbij||v.d<=t;if(af)q.gedaan+=v.b;
     q.items.push({soort:'vast',d:v.d,b:v.b,naam:v.p.naam,cat:v.p.cat,id:v.p.id,af:af,bev:bevestigd(v.p,v.pl)})});
@@ -1257,7 +1260,7 @@ function vHome(){
   }
   if(st.nood>0.005){var ntr=nogTerug();h+='<button class="melding" data-act="pijler" data-v="sparen" style="border-color:var(--clay);margin-top:10px;width:100%;text-align:left"><div><b>Noodgreep: '+eur(st.nood)+' van je spaarrekening gehaald</b><br><span class="dim">Dat is geen inkomen. '+(ntr.b>0.005?'Nog terug te zetten: '+eur(ntr.b)+'.':'')+'</span></div></button>'}
   if(st.krap)h+='<div class="melding" style="border-color:var(--clay);margin-top:10px"><div>Na je vaste lasten, vervoer en sparen blijft er niets over voor uitgaven. Kijk bij Besparen, of kies een lager spaardoel.</div></div>';
-  h+='<div class="drie2"><button class="regel" data-act="instellingen" style="text-align:left"><div class="k">Inkomen ✎</div><div class="v">'+eurInk(st.ink,1)+'</div></button>'
+  h+='<div class="drie2"><button class="regel" data-act="inkomen" style="text-align:left"><div class="k">Inkomen ✎'+(S.inkPer[per.van]!=null?'':' <span style="font-size:10px">(standaard)</span>')+'</div><div class="v">'+eurInk(st.ink,1)+'</div></button>'
     + '<div class="regel"><div class="k">Tot nu weg</div><div class="v">'+eur(st.ink-st.over,1)+'</div></div>'
     + '<div class="regel"><div class="k">'+(st.over>=0?(st.voorbij?'Over gebleven':'Nog op de rekening'):'Tekort')+'</div><div class="v" style="color:'+(st.over>=0?'var(--accent)':'var(--clay)')+'">'+eurInk(Math.abs(st.over),1)+'</div></div></div>';
   var nb=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot&&pijlerVan(u.cat,false)==='uit'}).length;
@@ -1335,6 +1338,22 @@ function openSpaar(id,soort){
   if(!m)setTimeout(function(){var e=document.getElementById('sp_b');if(e)e.focus()},250);
 }
 function terugNaarSparen(){ui.pijler='sparen';setTimeout(function(){openPijler('sparen')},30)}
+
+function inkomenForm(){
+  var per=periode(ui.per||0), eigen=S.inkPer[per.van]!=null, d=ui.draft, h=kop('Inkomen');
+  h+='<div class="sub" style="margin:-2px 0 6px">'+esc(periodeNaam(per))+'</div>';
+  h+='<div class="label">Wat kreeg je in deze periode binnen?</div><div class="eur groot"><input class="field groot" id="ip_b" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'"></div>';
+  h+='<button class="schakel'+(d.std?' on':'')+'" data-act="ipstd" style="margin-top:12px"><span>Ook als standaard voor volgende periodes</span><i></i></button>';
+  h+='<div class="note">Standaard nu: '+(S.hh.inkomen?eurInk(S.hh.inkomen):'nog niets')+'. Periodes waar je niets apart invult, rekenen daarmee. Dit blijft op je telefoon en gaat niet mee in je back-up.</div>';
+  h+='<button class="btn" data-act="ipbewaar">Opslaan</button>';
+  if(eigen)h+='<button class="btn outline klein" data-act="ipweg">Terug naar het standaardbedrag</button>';
+  return h;
+}
+function openInkomen(){
+  var per=periode(ui.per||0), v=inkomenVan(per);
+  ui.draft={bedragTxt:v?eurTekst(v):'',std:!per.n||per.n>0}; ui.sheet='inkomen'; openSheet(inkomenForm());
+  setTimeout(function(){var e=document.getElementById('ip_b');if(e){e.focus();e.select()}},250);
+}
 
 function openPijler(id){ui.pijler=id;ui.sheet='pijler';openSheet(pijlerForm())}
 
@@ -1520,6 +1539,7 @@ function herteken(){
   var el=document.getElementById('sheet'), top=el.scrollTop;
   if(ui.sheet==='post'){leesPostForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+postForm()}
   else if(ui.sheet==='los'){leesLosForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+losForm()}
+  else if(ui.sheet==='inkomen'){var ib=document.getElementById('ip_b');if(ib)ui.draft.bedragTxt=ib.value;el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+inkomenForm()}
   else if(ui.sheet==='spaar'){leesSpaarForm();el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+spaarForm()}
   else if(ui.sheet==='pijler'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+pijlerForm()}
   else if(ui.sheet==='jaar'){el.querySelector('.sheet-in').innerHTML='<div class="grip"></div>'+jaarForm()}
@@ -1674,7 +1694,7 @@ function instellingenForm(){
   var h=kop('Instellingen');
   h+='<div class="label">Huishouden</div>'+huishoudenBlok();
   h+='<div class="label">Netto inkomen per maand, samen (mag leeg)</div><div class="eur">'+(S.hideInk&&+S.hh.inkomen?'<button class="field" data-act="hideink" style="text-align:left;color:var(--dim)">••••  (tik om te tonen)</button>':'<input class="field" id="s_ink" inputmode="decimal" placeholder="0" value="'+(+S.hh.inkomen?esc(eurTekst(S.hh.inkomen)):'')+'">')+'</div>'
-    + '<div class="note">Alleen voor jezelf: dan zie je welk deel van je inkomen naar vaste lasten gaat, en of je misschien recht hebt op toeslag.</div>';
+    + '<div class="note">Alleen voor jezelf, en het blijft op dit toestel: het gaat niet mee in je back-up, en een back-up terugzetten verandert het niet.</div>';
   h+='<div class="label">Salaris</div><div class="stepper"><span class="sl">Komt op de</span><span class="sc"><button data-act="betaaldag" data-d="-1">−</button><span class="sn">'+(+S.hh.betaaldag||25)+'e</span><button data-act="betaaldag" data-d="1">+</button></span></div>'
     + '<button class="schakel'+(S.hh.weekend!==false?' on':'')+'" data-act="weekend" style="margin-top:8px"><span>Valt het in het weekend: de vrijdag ervoor</span><i></i></button>'
     + '<div class="label">Vaste lasten in het weekend</div><div class="chips">'+[['voor','Vrijdag ervoor'],['na','Maandag erna'],['geen','Niet schuiven']].map(function(o){return '<button class="chip'+((S.hh.vastWeekend||'voor')===o[0]?' on':'')+'" data-act="vastweekend" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'
@@ -1714,7 +1734,9 @@ var vraagCb=null;
 
 /* ───────────────────────────── back-up ───────────────────────────── */
 function backupTekst(){
-  return JSON.stringify({app:'huishoudboek',v:1,gemaakt:new Date().toISOString(),hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,pin:S.pin||'',spaar:S.spaar});
+  /* het inkomen blijft op het toestel: het gaat niet mee in de back-up */
+  var hh=Object.assign({},S.hh); delete hh.inkomen;
+  return JSON.stringify({app:'huishoudboek',v:1,gemaakt:new Date().toISOString(),hh:hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,spaarRek:S.spaarRek,spaarMut:S.spaarMut,pin:S.pin||'',spaar:S.spaar});
 }
 function backupNaam(){var d=new Date();return 'huishoudboek-'+today()+'-'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+'.json'}
 function zetTerug(tekst){
@@ -1727,7 +1749,9 @@ function zetTerug(tekst){
     }
     S.posten=d.posten; S.uitgaven=Array.isArray(d.uitgaven)?d.uitgaven:[];
     S.spaarRek=d.spaarRek||{naam:'Spaarrekening',saldo:null,datum:''}; S.spaarMut=Array.isArray(d.spaarMut)?d.spaarMut:[];
-    if(d.hh)S.hh=Object.assign({volw:1,kind:0,woning:'huur',inkomen:0},d.hh);
+    var ink=+S.hh.inkomen||0;
+    if(d.hh)S.hh=Object.assign({volw:1,kind:0,woning:'huur'},d.hh);
+    S.hh.inkomen=ink; /* wat je op dit toestel instelde, blijft staan */
     S.tipsWeg=d.tipsWeg||{}; S.begonnen=true;
     if(typeof d.pin==='string')S.pin=d.pin;
     if(d.spaar)S.spaar=+d.spaar;
@@ -1837,6 +1861,11 @@ document.addEventListener('click',function(e){
 
   if(act==='nieuwlos'){openLos(null,b.dataset.cat);return}
   if(act==='pijler'){openPijler(b.dataset.v);return}
+  if(act==='inkomen'){openInkomen();return}
+  if(act==='ipstd'){var ib2=document.getElementById('ip_b');if(ib2)ui.draft.bedragTxt=ib2.value;ui.draft.std=!ui.draft.std;herteken();return}
+  if(act==='ipbewaar'){var iv=getal((document.getElementById('ip_b')||{}).value);if(!(iv>0)){alert('Vul een bedrag in, bijvoorbeeld 3.400');return}
+    var ipr=periode(ui.per||0);S.inkPer[ipr.van]=iv;if(ui.draft.std)S.hh.inkomen=iv;save();closeSheet();render();return}
+  if(act==='ipweg'){delete S.inkPer[periode(ui.per||0).van];save();closeSheet();render();return}
   if(act==='spnieuw'){openSpaar(null,b.dataset.v);return}
   if(act==='spmut'){openSpaar(b.dataset.id);return}
   if(act==='spsoort'){ui.draft.soort=b.dataset.v;herteken();return}
@@ -1930,7 +1959,7 @@ document.addEventListener('input',function(e){
     return;
   }
   if(id==='f_afd'){ui.draft.afd=e.target.value;var sw=document.querySelector('[data-act=afvast] span');if(sw&&e.target.value)sw.textContent='Voortaan elke keer op de '+(+e.target.value.slice(8,10))+'e';return}
-  if(id==='h_ink'){var bv=getal(e.target.value);S.hh.inkomen=bv>0?bv:0;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){var y=window.scrollY;render();window.scrollTo(0,y)},1200);return}
+  if(id==='h_ink'){var bv=getal(e.target.value);S.hh.inkomen=bv>0?bv:0;if(bv>0)S.inkPer[periode(ui.per||0).van]=bv;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){var y=window.scrollY;render();window.scrollTo(0,y)},1200);return}
   if(id==='s_ink'){var v=getal(e.target.value);S.hh.inkomen=v>0?v:0;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){render()},900);return}
 });
 

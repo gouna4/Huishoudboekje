@@ -1,4 +1,4 @@
-# Huishoudboek · v9
+# Huishoudboek · v10
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -48,6 +48,9 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   en wat er per salarisperiode is afgeschreven
 - **Hoort bij**: per vaste last zelf kiezen in welke cirkel hij meetelt
 - **Tijdelijk**: een vaste last die na een aantal keer vanzelf stopt
+- **Inkomen per periode**: tik op het huisje op Inkomen ✎ en vul in wat je die
+  periode kreeg; eventueel ook als standaard. Het inkomen blijft op het toestel
+  en gaat niet mee in de back-up
 - **Spaarrekening**: tik op de cirkel Sparen. Saldo één keer invullen, dan
   rekent de app verder. Erop gezet en noodgreep (geld eraf naar je
   betaalrekening) vul je in; vaste spaaropdrachten tellen vanzelf mee. Een
@@ -79,13 +82,14 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='9'` bovenaan het script
-2. `sw.js` — `huishoudboek-v9`
+1. `index.html` — `var VERSIE='10'` bovenaan het script
+2. `sw.js` — `huishoudboek-v10`
 
 ## Nooit in deze repo
 
 Het back-upbestand (`huishoudboek-JJJJ-MM-DD-uummss.json`). Daarin staan je
-bedragen, leveranciers, klantnummers en je inkomen. `.gitignore` houdt ze
+bedragen, leveranciers en klantnummers. Je inkomen staat er niet in: dat
+blijft op het toestel en verandert niet als je een back-up terugzet. `.gitignore` houdt ze
 tegen, maar kijk voor het uploaden of er niets tussen zit.
 
 ## Let op
