@@ -1,4 +1,4 @@
-# Huishoudboek · v6
+# Huishoudboek · v7
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -53,7 +53,10 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 - **Jaaroverzicht**: per maand, per soort en per vaste last; afdrukken of
   opslaan als PDF
 - **Pincode** van vier cijfers; op slot bij openen en na drie minuten weg
-- Bedragen verbergen met het oogje
+- **Het oogje** bovenin verbergt alleen je inkomen (en wat je daaruit kunt
+  terugrekenen); alle bedragen verbergen kan bij de instellingen
+- **Overal dezelfde periode**: huisje, vaste lasten, uitgaven en vervoer bladeren
+  samen van salaris tot salaris
 - Back-up sturen, opslaan of kopiëren; terugzetten uit een bestand of geplakte
   tekst; vijf herstelpunten op het toestel zelf; een melding als je twee
   weken geen back-up maakte
@@ -71,8 +74,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='6'` bovenaan het script
-2. `sw.js` — `huishoudboek-v6`
+1. `index.html` — `var VERSIE='7'` bovenaan het script
+2. `sw.js` — `huishoudboek-v7`
 
 ## Nooit in deze repo
 

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* Huishoudboek · v6 — broertje van het telefoonboek en het klusboek */
+/* Huishoudboek · v7 — broertje van het telefoonboek en het klusboek */
 :root{
   --night:#111614; --surface:#1A201D; --surface2:#222A26; --line:#303A35;
   --sand:#EEF2EC; --dim:#97A39C; --faint:#6B7771;
@@ -363,7 +363,7 @@ textarea.field{min-height:74px;resize:vertical}
 <div id="print"></div>
 <input type="file" id="s_file" accept=".json,application/json,text/plain" hidden>
 <script>
-var VERSIE='6';
+var VERSIE='7';
 var KEY='huishoudboek';
 
 /* ─────────────────────────── pictogrammen ───────────────────────────
@@ -511,7 +511,7 @@ var MND=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'
 
 /* ───────────────────────────── opslag ───────────────────────────── */
 var S={v:1, hh:{volw:1,kind:0,woning:'huur',inkomen:0,betaaldag:25,weekend:true}, posten:[], uitgaven:[],
-       tipsWeg:{}, hide:false, snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
+       tipsWeg:{}, hide:false, hideInk:false, snaps:[], lastBackup:'', begonnen:false, pin:'', spaar:10};
 var ui={tab:'home', maand:'', sort:'cat', zoek:'', sheet:null, draft:null, catOpen:false,
         msg:'', toonWeg:false};
 
@@ -525,7 +525,7 @@ function load(){
       if(Array.isArray(d.posten))S.posten=d.posten;
       if(Array.isArray(d.uitgaven))S.uitgaven=d.uitgaven;
       if(d.tipsWeg)S.tipsWeg=d.tipsWeg;
-      S.hide=!!d.hide; S.begonnen=!!d.begonnen;
+      S.hide=!!d.hide; S.hideInk=!!d.hideInk; S.begonnen=!!d.begonnen;
       if(Array.isArray(d.snaps))S.snaps=d.snaps;
       if(d.lastBackup)S.lastBackup=d.lastBackup;
       if(typeof d.pin==='string')S.pin=d.pin;
@@ -536,7 +536,7 @@ function load(){
 function save(){
   try{
     localStorage.setItem(KEY,JSON.stringify({v:1,hh:S.hh,posten:S.posten,uitgaven:S.uitgaven,tipsWeg:S.tipsWeg,
-      hide:S.hide,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab,pin:S.pin,spaar:S.spaar}));
+      hide:S.hide,hideInk:S.hideInk,begonnen:S.begonnen,snaps:S.snaps,lastBackup:S.lastBackup,tab:ui.tab,pin:S.pin,spaar:S.spaar}));
   }catch(e){ui.msg='Opslaan lukte niet: de opslag van de browser is vol of uitgezet.'}
 }
 /* één herstelpunt per dag, de laatste vijf blijven bewaard */
@@ -565,6 +565,8 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 var NF=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'});
 var NF0=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',maximumFractionDigits:0,minimumFractionDigits:0});
+/* inkomen apart: het oogje bovenin verbergt alleen dit, en wat je eruit kunt afleiden */
+function eurInk(v,rond){return S.hideInk?'€ ••••':eur(v,rond)}
 function eur(v,rond){if(S.hide)return '€ ••••';var x=Math.round((v||0)*100)/100;return (rond?NF0:NF).format(x).replace(/ /g,' ')}
 function eurTekst(v){return (Math.round(v*100)/100).toFixed(2).replace('.',',')}
 function getal(s){
@@ -879,16 +881,16 @@ var TABS=[{id:'overzicht',n:'Overzicht',i:'overzicht'},{id:'vast',n:'Vaste laste
           {id:'uitgaven',n:'Uitgaven',i:'bon'},{id:'vervoer',n:'Vervoer',i:'auto'},{id:'besparen',n:'Besparen',i:'lamp'}];
 
 function render(){
-  var h='<header class="top"><div class="top-in"><div class="kopl"><button class="icon-btn homebtn'+(ui.tab==='home'?' on':'')+'" data-act="tab" data-v="home" aria-label="Thuis">'+svg(P.huis)+'</button><div><div class="title">Huishoudboek</div>'
+  var h='<header class="top"><div class="top-in"><div class="kopl"><button class="icon-btn homebtn'+(ui.tab==='home'?' on':'')+'" data-act="thuis" aria-label="Thuis">'+svg(P.huis)+'</button><div><div class="title">Huishoudboek</div>'
     + '<div class="sub">'+esc(S.hh.volw)+(+S.hh.volw===1?' volwassene':' volwassenen')+(+S.hh.kind?' · '+S.hh.kind+(+S.hh.kind===1?' kind':' kinderen'):'')+' · v'+VERSIE+'</div></div></div>'
-    + '<div class="knoppen"><button class="icon-btn'+(S.hide?' on':'')+'" data-act="hide" aria-label="Bedragen verbergen">'+svg(P[S.hide?'oogdicht':'oog'])+'</button>'
+    + '<div class="knoppen"><button class="icon-btn'+(S.hideInk?' on':'')+'" data-act="hideink" aria-label="Inkomen verbergen" title="Inkomen verbergen">'+svg(P[S.hideInk?'oogdicht':'oog'])+'</button>'
     + '<button class="icon-btn" data-act="instellingen" aria-label="Instellingen">'+svg(P.tandwiel)+'</button></div></div></header>';
   h+='<main class="wrap">';
   if(ui.msg){h+='<div class="flash">'+esc(ui.msg)+'</div>';ui.msg=''}
   h+=({home:vHome,overzicht:vOverzicht,vast:vVast,uitgaven:vUitgaven,vervoer:vVervoer,besparen:vBesparen}[ui.tab]||vHome)();
   h+='</main>';
-  if(ui.tab==='vast'||ui.tab==='uitgaven'||ui.tab==='overzicht'||ui.tab==='vervoer')
-    h+='<button class="fab" data-act="'+(ui.tab==='uitgaven'||ui.tab==='vervoer'?'nieuwlos':'nieuwpost')+'"'+(ui.tab==='vervoer'?' data-cat="brandstof"':'')+' aria-label="Toevoegen">'+svg(P.plus)+'</button>';
+  if(ui.tab==='vast'||ui.tab==='uitgaven'||ui.tab==='overzicht'||ui.tab==='vervoer'||(ui.tab==='home'&&+S.hh.inkomen))
+    h+='<button class="fab" data-act="'+(ui.tab==='uitgaven'||ui.tab==='vervoer'||ui.tab==='home'?'nieuwlos':'nieuwpost')+'"'+(ui.tab==='vervoer'?' data-cat="brandstof"':'')+' aria-label="Toevoegen">'+svg(P.plus)+'</button>';
   var nt=tips().filter(function(t){return t.hoog}).length;
   h+='<nav class="nav"><div class="nav-in">';
   TABS.forEach(function(t){
@@ -936,12 +938,9 @@ function vOverzicht(){
   if(ink>0){
     var deel=vp.tot/ink, cls=deel>.75?' te':deel>.55?' warn':'';
     h+='<div class="meter'+cls+'"><i style="width:'+Math.min(100,deel*100).toFixed(1)+'%"></i></div>'
-      + '<div class="meterlab"><span>'+Math.round(deel*100)+'% van je inkomen</span><span>over: <b class="mono" style="color:var(--sand)">'+eur(ink-vp.tot)+'</b></span></div>';
+      + '<div class="meterlab"><span>'+(S.hideInk?'deel van je inkomen':Math.round(deel*100)+'% van je inkomen')+'</span><span>over: <b class="mono" style="color:var(--sand)">'+eurInk(ink-vp.tot)+'</b></span></div>';
   }
   h+='</div>';
-  h+='<div class="kpis"><button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">'+esc(maandNaam(k,1))+' tot nu</div><div class="v">'+eur(afgeschreven+ms.tl,1)+'</div></button>'
-    + '<button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">Komt nog deze maand</div><div class="v">'+eur(komtNog,1)+'</div></button>'
-    + '<button class="kpi" data-act="tab" data-v="uitgaven"><div class="k">Losse uitgaven</div><div class="v">'+eur(ms.tl,1)+'</div></button></div>';
 
   var tl=tips(), som=0; tl.forEach(function(x){if(!x.weg)som+=x.s});
   if(tl.length){var top=tl[0];
@@ -989,11 +988,9 @@ function postRij(p){
 }
 
 function vVastPeriode(){
-  var per=periode(ui.vastPer||0), st=staatTussen(per.van,per.tot), t=today(), h='', som=0, af=0;
+  var per=periode(ui.per||0), st=staatTussen(per.van,per.tot), t=today(), h='', som=0, af=0;
   st.vast.forEach(function(x){som+=x.b;if(x.d<=t)af+=x.b});
-  h+='<div class="mnav" style="margin-top:12px"><button class="icon-btn" data-act="vastper" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
-    + '<div style="text-align:center"><div class="mn" style="font-size:16px;text-transform:none">'+esc(periodeNaam(per))+'</div><div class="sub">'+(per.n?(per.n===-1?'vorige periode':(-per.n)+' periodes terug'):'deze periode')+'</div></div>'
-    + '<button class="icon-btn" data-act="vastper" data-d="1" aria-label="Volgende periode">'+svg(P.rechts)+'</button></div>';
+  h+=perNav();
   h+='<div class="drie"><div class="kpi"><div class="k">Afgeschreven</div><div class="v">'+eur(af,1)+'</div></div><div class="kpi"><div class="k">Komt nog</div><div class="v">'+eur(som-af,1)+'</div></div><div class="kpi"><div class="k">Totaal</div><div class="v">'+eur(som,1)+'</div></div></div>';
   if(!st.vast.length)return h+'<div class="card" style="margin-top:12px"><div class="leeg">Geen vaste lasten in deze periode.</div></div>';
   h+='<div class="card" style="margin-top:12px">';
@@ -1040,64 +1037,46 @@ function vVast(){
   return h;
 }
 
-function vUitgaven(){
-  var k=ui.maand||ym(today()), ms=maandStaat(k), t=today(), h='';
-  /* zes maanden naast elkaar, de gekozen maand in het midden van je blik */
-  var kols=[],max=1;
-  var cur=ym(today()), eindM=(k>cur||k<schuifMaand(cur,-5))?k:cur;
-  for(var i=5;i>=0;i--){var mk=schuifMaand(eindM,-i);
-    var st=maandStaat(mk);kols.push({k:mk,v:st.tv,l:st.tl});if(st.tot>max)max=st.tot}
-  h+='<div class="mnav"><button class="icon-btn" data-act="maand" data-d="-1" aria-label="Vorige maand">'+svg(P.links)+'</button>'
-    + '<div class="mn">'+esc(maandNaam(k))+'</div>'
-    + '<button class="icon-btn" data-act="maand" data-d="1" aria-label="Volgende maand">'+svg(P.rechts)+'</button></div>';
-  h+='<div class="drie"><div class="kpi"><div class="k">Vaste lasten</div><div class="v">'+eur(ms.tv,1)+'</div></div>'
-    + '<div class="kpi"><div class="k">Losse uitgaven</div><div class="v">'+eur(ms.tl,1)+'</div></div>'
-    + '<div class="kpi"><div class="k">Totaal</div><div class="v">'+eur(ms.tot,1)+'</div></div></div>';
-
-  h+='<div class="card chart" style="margin-top:10px" role="img" aria-label="Uitgaven per maand, laatste zes maanden"><div class="cols">';
-  kols.forEach(function(c){
-    var tot=c.v+c.l, hv=c.v/max*100, hl=c.l/max*100;
-    h+='<button class="col'+(c.k===k?'':' dimmed')+'" data-act="kiesmaand" data-v="'+c.k+'" title="'+esc(maandNaam(c.k))+': vast '+esc(eur(c.v))+', los '+esc(eur(c.l))+'">'
-      + '<span class="tot">'+(tot?eur(tot,1).replace('€ ','€'):'')+'</span><span class="stk" style="height:calc(100% - 18px)">'
-      + (c.l?'<span class="sl" style="height:'+hl.toFixed(1)+'%"></span>':'')
-      + (c.v?'<span class="sv" style="height:'+hv.toFixed(1)+'%"></span>':'')+'</span></button>';
+function kolommen(filter){
+  /* zes periodes naast elkaar, eindigend bij de gekozen */
+  var n0=ui.per||0, kols=[], max=1;
+  for(var i=5;i>=0;i--){var p=periode(n0-i),sm=0;
+    S.uitgaven.forEach(function(u){if(u.d>=p.van&&u.d<=p.tot&&filter(u))sm+=u.b});
+    kols.push({n:n0-i,v:sm,l:dag(p.van).toLocaleDateString('nl-NL',{month:'short'}).replace('.','')});if(sm>max)max=sm}
+  var h='<div class="card chart" style="margin-top:10px" role="img" aria-label="Per salarisperiode"><div class="cols">';
+  kols.forEach(function(c){h+='<button class="col'+(c.n===n0?'':' dimmed')+'" data-act="kiesper" data-v="'+c.n+'"><span class="tot">'+(c.v?eur(c.v,1).replace('€ ','€'):'')+'</span><span class="stk" style="height:calc(100% - 18px)">'+(c.v?'<span class="sl" style="height:'+(c.v/max*100).toFixed(1)+'%;border-radius:4px 4px 2px 2px"></span>':'')+'</span></button>'});
+  return h+'</div><div class="colx">'+kols.map(function(c){return '<span class="'+(c.n===n0?'on':'')+'">'+esc(c.l)+'</span>'}).join('')+'</div><div class="legend"><span>Per salarisperiode, gelabeld met de maand waarin hij begint</span></div></div>';
+}
+function losLijst(los){
+  var h='<div class="card">';
+  los.forEach(function(u){
+    h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+(u.oms?' · '+esc(CAT[u.cat].n):'')+'</div></div>'
+      + '<div class="b"><div class="a">'+eur(u.b)+'</div></div></button>';
   });
-  h+='</div><div class="colx">'+kols.map(function(c){return '<span class="'+(c.k===k?'on':'')+'">'+esc(maandNaam(c.k,1))+'</span>'}).join('')+'</div>'
-    + '<div class="legend"><span><i style="background:var(--accent)"></i>Vaste lasten</span><span><i style="background:var(--accent2)"></i>Losse uitgaven</span></div></div>';
-
-  var rij=Object.keys(ms.perCat).map(function(c){return {c:c,v:ms.perCat[c]}}).sort(function(a,b){return b.v-a.v});
+  return h+'</div>';
+}
+function vUitgaven(){
+  var per=periode(ui.per||0), t=today(), h=perNav();
+  var los=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+  var tl=0,perCat={}; los.forEach(function(u){tl+=u.b;perCat[u.cat]=(perCat[u.cat]||0)+u.b});
+  var eindDag=t<per.tot?t:per.tot, dagen=Math.max(1,Math.round((dag(eindDag)-dag(per.van))/86400000)+1);
+  h+='<div class="drie"><div class="kpi"><div class="k">Uitgegeven</div><div class="v">'+eur(tl,1)+'</div></div>'
+    + '<div class="kpi"><div class="k">Per dag</div><div class="v">'+eur(eindDag<per.van?0:tl/dagen,1)+'</div></div>'
+    + '<div class="kpi"><div class="k">Aantal keer</div><div class="v">'+los.length+'</div></div></div>';
+  h+=kolommen(function(){return true});
+  var rij=Object.keys(perCat).map(function(c){return {c:c,v:perCat[c]}}).sort(function(a,b){return b.v-a.v});
   if(rij.length){
-    h+='<div class="h2"><h2>Per soort</h2><span class="r">'+esc(maandNaam(k))+'</span></div><div class="card bars">';
+    h+='<div class="h2"><h2>Per soort</h2></div><div class="card bars">';
     rij.forEach(function(x){
-      h+='<div class="bar">'+ico(x.c,1)+'<span class="nm">'+esc(CAT[x.c].n)+'</span><span class="am">'+eur(x.v,1)+'<span class="pc">'+Math.round(x.v/ms.tot*100)+'%</span></span>'
+      h+='<div class="bar">'+ico(x.c,1)+'<span class="nm">'+esc(CAT[x.c].n)+'</span><span class="am">'+eur(x.v,1)+'<span class="pc">'+Math.round(x.v/tl*100)+'%</span></span>'
         + '<span class="tr"><i style="width:'+(x.v/rij[0].v*100).toFixed(1)+'%"></i></span></div>';
     });
     h+='</div>';
   }
-
-  h+='<button class="btn outline klein" data-act="jaaropen">'+svg(P.printer).replace('<svg','<svg width="18" height="18" style="vertical-align:-3px;margin-right:8px"')+'Jaaroverzicht '+k.slice(0,4)+'</button>';
-  h+='<div class="h2"><h2>Losse uitgaven</h2><button class="r" data-act="nieuwlos">+ toevoegen</button></div>';
-  if(!ms.los.length)h+='<div class="card"><div class="leeg">Nog niets deze maand. Boodschappen, tanken, uit eten: tik op + en vul het bedrag in.</div></div>';
-  else{
-    h+='<div class="card">';
-    ms.los.forEach(function(u){
-      h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+(u.oms?' · '+esc(CAT[u.cat].n):'')+'</div></div>'
-        + '<div class="b"><div class="a">'+eur(u.b)+'</div></div></button>';
-    });
-    h+='</div>';
-  }
-
-  h+='<div class="h2"><h2>Vaste lasten deze maand</h2><span class="r">'+ms.vast.length+'×</span></div>';
-  if(!ms.vast.length)h+='<div class="card"><div class="leeg">Geen vaste lasten in deze maand.</div></div>';
-  else{
-    h+='<div class="card">';
-    ms.vast.forEach(function(x){
-      var af=x.d<=t;
-      h+='<button class="rij" data-act="post" data-id="'+x.p.id+'">'+ico(x.p.cat)+'<div class="t"><div class="n">'+esc(x.p.naam)+'</div><div class="m">'+esc(datum(x.d))+'<span class="tag '+(af?'af">afgeschreven':'nog">komt nog')+'</span></div></div>'
-        + '<div class="b"><div class="a">'+eur(x.b)+'</div></div></button>';
-    });
-    h+='</div>';
-  }
+  h+='<div class="h2"><h2>Wat je uitgaf</h2><button class="r" data-act="nieuwlos">+ toevoegen</button></div>';
+  h+=los.length?losLijst(los):'<div class="card"><div class="leeg">Nog niets in deze periode. Boodschappen, tanken, uit eten: tik op + en vul het bedrag in.</div></div>';
+  h+='<button class="btn outline klein" data-act="vastperiode">Vaste lasten van deze periode bekijken</button>';
+  h+='<button class="btn outline klein" data-act="jaaropen">'+svg(P.printer).replace('<svg','<svg width="18" height="18" style="vertical-align:-3px;margin-right:8px"')+'Jaaroverzicht '+per.van.slice(0,4)+'</button>';
   return h;
 }
 
@@ -1198,17 +1177,21 @@ function pijlerRegel(id,q,schuif){
   if(q.gedaan>q.budget+0.005)return '▲ '+eur(q.gedaan-q.budget,1)+' te veel';
   return 'nog '+eur(q.budget-q.gedaan,1)+' over';
 }
+function perNav(){
+  var per=periode(ui.per||0), n=per.n, rest=dagenTot(per.volgende);
+  var sub=!n?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je salaris ('+datum(per.volgende)+')':n===-1?'vorige periode':n===1?'volgende periode':n<0?(-n)+' periodes terug':'over '+n+' periodes';
+  return '<div class="mnav"><button class="icon-btn" data-act="per" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
+    + '<div style="text-align:center"><div class="mn" style="font-size:17px;text-transform:none">'+esc(periodeNaam(per))+'</div><div class="sub">'+esc(sub)+'</div></div>'
+    + '<button class="icon-btn" data-act="per" data-d="1" aria-label="Volgende periode">'+svg(P.rechts)+'</button></div>'
+    + (n?'<button class="chip" data-act="per" data-d="0" style="margin-top:10px">Terug naar nu</button>':'');
+}
 function vHome(){
   var per=periode(ui.per||0), st=pijlerStaat(per), h=backupMelding();
-  var rest=dagenTot(per.volgende), nu=!per.n;
-  h+='<div class="mnav"><button class="icon-btn" data-act="per" data-d="-1" aria-label="Vorige periode">'+svg(P.links)+'</button>'
-    + '<div style="text-align:center"><div class="mn" style="font-size:17px;text-transform:none">'+esc(periodeNaam(per))+'</div>'
-    + '<div class="sub">'+(nu?(rest===1?'morgen':'nog '+rest+' dagen tot')+' je salaris ('+esc(datum(per.volgende))+')':per.n===-1?'vorige periode':(-per.n)+' periodes terug')+'</div></div>'
-    + '<button class="icon-btn" data-act="per" data-d="1" aria-label="Volgende periode"'+(nu?' disabled style="opacity:.3"':'')+'>'+svg(P.rechts)+'</button></div>';
-  if(!nu)h+='<button class="chip" data-act="per" data-d="0" style="margin-top:10px">Terug naar nu</button>';
-  h+='<div class="inkblok"><label for="h_ink">Mijn inkomen per maand</label><div class="eur"><input class="field" id="h_ink" inputmode="decimal" placeholder="Vul hier je netto inkomen in" value="'+(st.ink?esc(eurTekst(st.ink)):'')+'"></div></div>';
+  h+=perNav();
+  /* het inkomen vul je één keer in; daarna staat het hier alleen als regel */
   if(!st.ink){
-    h+='<div class="card" style="margin-top:12px"><div class="leeg">Vul hierboven je netto inkomen per maand in. Dan verdeelt de app het over vaste lasten, uitgaven, vervoer en sparen, en zie je per potje hoe ver je bent.</div></div>';
+    h+='<div class="inkblok"><label for="h_ink">Mijn netto inkomen per maand</label><div class="eur"><input class="field" id="h_ink" inputmode="decimal" placeholder="Vul hier je inkomen in"></div></div>'
+      + '<div class="card" style="margin-top:12px"><div class="leeg">Vul je netto inkomen per maand in. Dan verdeelt de app het over vaste lasten, uitgaven, vervoer en sparen, en zie je per potje hoe ver je bent. Je hoeft het maar één keer te doen.</div></div>';
     return h;
   }
   h+='<div class="pijlers">';
@@ -1219,7 +1202,7 @@ function vHome(){
       + '<div class="pn">'+esc(x.n)+'</div>'
       + '<div class="pb">'+eur(q.gedaan,1)+' <span>van '+eur(q.budget,1)+'</span></div>'
       + '<div class="pr '+cls+'">'+esc(pijlerRegel(x.id,q,st.schuif))+'</div>'
-      + '<div class="pp">'+Math.round(q.budget/st.ink*100)+'% van je inkomen</div></button>';
+      + '<div class="pp">'+(S.hideInk?'&nbsp;':Math.round(q.budget/st.ink*100)+'% van je inkomen')+'</div></button>';
   });
   h+='</div>';
   if(st.schuif.length){
@@ -1228,9 +1211,9 @@ function vHome(){
     h+='</div>';
   }
   if(st.krap)h+='<div class="melding" style="border-color:var(--clay);margin-top:10px"><div>Na je vaste lasten, vervoer en sparen blijft er niets over voor uitgaven. Kijk bij Besparen, of kies een lager spaardoel.</div></div>';
-  h+='<div class="drie2"><div class="regel"><div class="k">Inkomen</div><div class="v">'+eur(st.ink,1)+'</div></div>'
+  h+='<div class="drie2"><button class="regel" data-act="instellingen" style="text-align:left"><div class="k">Inkomen ✎</div><div class="v">'+eurInk(st.ink,1)+'</div></button>'
     + '<div class="regel"><div class="k">Tot nu weg</div><div class="v">'+eur(st.ink-st.over,1)+'</div></div>'
-    + '<div class="regel"><div class="k">'+(st.over>=0?(st.voorbij?'Over gebleven':'Nog op de rekening'):'Tekort')+'</div><div class="v" style="color:'+(st.over>=0?'var(--accent)':'var(--clay)')+'">'+eur(Math.abs(st.over),1)+'</div></div></div>';
+    + '<div class="regel"><div class="k">'+(st.over>=0?(st.voorbij?'Over gebleven':'Nog op de rekening'):'Tekort')+'</div><div class="v" style="color:'+(st.over>=0?'var(--accent)':'var(--clay)')+'">'+eurInk(Math.abs(st.over),1)+'</div></div></div>';
   var nb=S.uitgaven.filter(function(u){return u.d>=per.van&&u.d<=per.tot&&pijlerVan(u.cat,false)==='uit'}).length;
   if(!nb)h+='<div class="note" style="margin:10px 4px 0">Er staan in deze periode nog geen boodschappen of andere uitgaven in. Zet ze bij Uitgaven, dan klopt de cirkel.</div>';
   h+='<div class="note" style="margin:10px 4px 0">Een periode loopt van salaris tot salaris: op de '+(+S.hh.betaaldag||25)+'e'+(S.hh.weekend!==false?', of de vrijdag ervoor als dat in het weekend valt':'')+'. <button data-act="instellingen" style="color:var(--accent);font-weight:600;font-size:12.5px">Wijzig</button></div>';
@@ -1241,7 +1224,7 @@ function vHome(){
 function pijlerForm(){
   var id=ui.pijler, st=pijlerStaat(periode(ui.per||0)), q=st.r[id], x=PIJ[id], cls=pijlerKlasse(id,q,st.schuif), h=kop(x.n);
   h+='<div class="sub" style="text-align:center;margin-top:-2px">'+esc(periodeNaam(st.per))+'</div><div class="groring">'+ring(q.pct,190,cls,'<b>'+(S.hide?'••':Math.round(q.pct*100)+'%')+'</b><span>'+(id==='vast'?'afgeschreven':id==='sparen'?'van je doel':'uitgegeven')+'</span>')+'</div>';
-  h+='<div class="drie2"><div class="regel"><div class="k">'+(id==='vast'?'Deze maand':id==='sparen'?'Doel':'Mag')+'</div><div class="v">'+eur(q.budget,1)+'</div><div class="s">'+(st.ink?Math.round(q.budget/st.ink*100)+'% van je inkomen':'')+'</div></div>'
+  h+='<div class="drie2"><div class="regel"><div class="k">'+(id==='vast'?'Deze maand':id==='sparen'?'Doel':'Mag')+'</div><div class="v">'+eur(q.budget,1)+'</div><div class="s">'+(st.ink&&!S.hideInk?Math.round(q.budget/st.ink*100)+'% van je inkomen':'')+'</div></div>'
     + '<div class="regel"><div class="k">'+(id==='sparen'?'Gespaard':'Tot nu')+'</div><div class="v">'+eur(q.gedaan,1)+'</div></div>'
     + '<div class="regel"><div class="k">'+(q.gedaan>q.budget+0.005?'Te veel':'Nog')+'</div><div class="v" style="color:'+(q.gedaan>q.budget+0.005&&id!=='sparen'?'var(--clay)':'var(--sand)')+'">'+eur(Math.abs(q.budget-q.gedaan),1)+'</div></div></div>';
   st.schuif.forEach(function(s2){
@@ -1265,28 +1248,19 @@ function openPijler(id){ui.pijler=id;ui.sheet='pijler';openSheet(pijlerForm())}
 
 /* ───────────────────────────── vervoer ───────────────────────────── */
 function vVervoer(){
-  var k=ui.maand||ym(today()), ms=maandStaat(k), t=today(), h='';
-  var vast=ms.vast.filter(function(v){return pijlerPost(v.p)==='vervoer'}), los=ms.los.filter(function(u){return pijlerVan(u.cat,false)==='vervoer'});
+  var per=periode(ui.per||0), st=staatTussen(per.van,per.tot), t=today(), h=perNav();
+  var vast=st.vast.filter(function(v){return pijlerPost(v.p)==='vervoer'}), los=st.los.filter(function(u){return pijlerVan(u.cat,false)==='vervoer'}).sort(function(a,b){return a.d<b.d?1:-1});
   var tv=0,tl=0; vast.forEach(function(v){tv+=v.b}); los.forEach(function(u){tl+=u.b});
-  h+='<div class="mnav"><button class="icon-btn" data-act="maand" data-d="-1" aria-label="Vorige maand">'+svg(P.links)+'</button><div class="mn">'+esc(maandNaam(k))+'</div>'
-    + '<button class="icon-btn" data-act="maand" data-d="1" aria-label="Volgende maand">'+svg(P.rechts)+'</button></div>';
   h+='<div class="drie"><div class="kpi"><div class="k">Vaste autokosten</div><div class="v">'+eur(tv,1)+'</div></div>'
     + '<div class="kpi"><div class="k">Tanken en reizen</div><div class="v">'+eur(tl,1)+'</div></div>'
     + '<div class="kpi"><div class="k">Totaal</div><div class="v">'+eur(tv+tl,1)+'</div></div></div>';
-  /* tanken per maand, zes maanden terug */
-  var kols=[],max=1;
-  for(var i=5;i>=0;i--){var mk=schuifMaand(k,-i),sm=0;S.uitgaven.forEach(function(u){if(ym(u.d)===mk&&pijlerVan(u.cat,false)==='vervoer')sm+=u.b});kols.push({k:mk,v:sm});if(sm>max)max=sm}
-  h+='<div class="card chart" style="margin-top:10px" role="img" aria-label="Tanken en reizen per maand"><div class="cols">';
-  kols.forEach(function(c){h+='<button class="col'+(c.k===k?'':' dimmed')+'" data-act="kiesmaand" data-v="'+c.k+'"><span class="tot">'+(c.v?eur(c.v,1).replace('€ ','€'):'')+'</span><span class="stk" style="height:calc(100% - 18px)">'+(c.v?'<span class="sv" style="height:'+(c.v/max*100).toFixed(1)+'%;border-radius:4px 4px 2px 2px"></span>':'')+'</span></button>'});
-  h+='</div><div class="colx">'+kols.map(function(c){return '<span class="'+(c.k===k?'on':'')+'">'+esc(maandNaam(c.k,1))+'</span>'}).join('')+'</div><div class="legend"><span>Tanken en reizen per maand</span></div></div>';
+  h+=kolommen(function(u){return pijlerVan(u.cat,false)==='vervoer'});
   h+='<div class="h2"><h2>Tanken en reizen</h2><button class="r" data-act="nieuwlos" data-cat="brandstof">+ toevoegen</button></div>';
-  if(!los.length)h+='<div class="card"><div class="leeg">Nog niets deze maand. Getankt? Tik op + en vul het bedrag in.</div></div>';
-  else{h+='<div class="card">';los.forEach(function(u){
-    h+='<button class="rij" data-act="los" data-id="'+u.id+'">'+ico(u.cat)+'<div class="t"><div class="n">'+esc(u.oms||CAT[u.cat].n)+'</div><div class="m">'+esc(datum(u.d))+'</div></div><div class="b"><div class="a">'+eur(u.b)+'</div></div></button>'});h+='</div>'}
+  h+=los.length?losLijst(los):'<div class="card"><div class="leeg">Nog niets in deze periode. Getankt? Tik op + en vul het bedrag in.</div></div>';
   h+='<div class="h2"><h2>Vaste autokosten</h2><span class="r">'+vast.length+'×</span></div>';
-  if(!vast.length)h+='<div class="card"><div class="leeg">Geen vaste autokosten in deze maand. Wegenbelasting, verzekering of ANWB zet je bij Vaste lasten onder Auto.</div></div>';
-  else{h+='<div class="card">';vast.forEach(function(x){var af=x.d<=t;
-    h+='<button class="rij" data-act="post" data-id="'+x.p.id+'">'+ico(x.p.cat)+'<div class="t"><div class="n">'+esc(x.p.naam)+'</div><div class="m">'+esc(datum(x.d))+'<span class="tag '+(af?'af">afgeschreven':'nog">komt nog')+'</span></div></div><div class="b"><div class="a">'+eur(x.b)+'</div></div></button>'});h+='</div>'}
+  if(!vast.length)h+='<div class="card"><div class="leeg">Geen vaste autokosten in deze periode.</div></div>';
+  else{h+='<div class="card">';vast.forEach(function(x){var bev=bevestigd(x.p,x.pl),toek=x.d>t;
+    h+='<button class="rij" data-act="post" data-id="'+x.p.id+'">'+ico(x.p.cat)+'<div class="t"><div class="n">'+esc(x.p.naam)+'</div><div class="m">'+esc(datum(x.d))+' <span class="tag '+(bev?'af">✓ bevestigd':toek?'nog">komt nog':'af">afgeschreven')+'</span></div></div><div class="b"><div class="a">'+eur(x.b)+'</div></div></button>'});h+='</div>'}
   return h;
 }
 
@@ -1295,7 +1269,7 @@ function vBesparen(){
   tl.forEach(function(t){if(!t.weg)som+=t.s});
   h+='<div class="bespaar"><div class="k">Wat je misschien kunt besparen</div><div class="v">'+(som?eur(som,1)+' <span style="font-size:15px;color:var(--dim);font-family:var(--sans);font-weight:500">per jaar</span>':'Nog niets gevonden')+'</div>'
     + '<div class="s">Een ruwe schatting. De app vergelijkt wat je betaalt met wat een gewoon huishouden van '+personen()+(personen()===1?' persoon':' personen')+' ongeveer kwijt is, en kijkt naar contracten die aflopen en prijzen die stijgen.</div>'
-    + '<div class="chips" style="margin-top:12px"><button class="chip" data-act="instellingen">'+esc(S.hh.volw)+' volw. · '+esc(S.hh.kind)+' kind. · '+(S.hh.woning==='koop'?'koop':'huur')+(+S.hh.inkomen?' · inkomen '+eur(S.hh.inkomen,1):'')+' — wijzig</button></div></div>';
+    + '<div class="chips" style="margin-top:12px"><button class="chip" data-act="instellingen">'+esc(S.hh.volw)+' volw. · '+esc(S.hh.kind)+' kind. · '+(S.hh.woning==='koop'?'koop':'huur')+(+S.hh.inkomen?' · inkomen '+eurInk(S.hh.inkomen,1):'')+' — wijzig</button></div></div>';
   if(!(+S.hh.inkomen))h+='<div class="note" style="margin:10px 4px 0">Vul in de instellingen je netto inkomen per maand in, dan kijkt de app ook naar toeslagen en wat er overblijft.</div>';
   if(!tl.length){
     h+='<div class="card" style="margin-top:14px"><div class="leeg">'+(S.posten.length<3?'Zet eerst een paar vaste lasten in de app, dan zoekt hij mee.':'Je zit overal rond of onder het gemiddelde. Netjes.')+'</div></div>';
@@ -1346,33 +1320,68 @@ function catKiezer(sel,volgorde){
 
 function postForm(){
   var d=ui.draft, nieuw=!d.id, h=kop(nieuw?'Nieuwe vaste last':'Vaste last');
+  var p=nieuw?null:S.posten.filter(function(x){return x.id===d.id})[0];
   h+='<div class="label">Wat is het?</div><input class="field" id="f_naam" placeholder="Bijvoorbeeld: Vattenfall, huur, Netflix" value="'+esc(d.naam)+'" autocomplete="off">';
   h+='<div class="label">Bedrag</div><div class="eur groot"><input class="field groot" id="f_bedrag" inputmode="decimal" placeholder="0,00" value="'+esc(d.bedragTxt)+'" autocomplete="off"></div>';
   h+='<div class="label">Hoe vaak?</div><div class="chips">'+FREQS.map(function(f){return '<button class="chip'+(d.freq===f.id?' on':'')+'" data-act="freq" data-v="'+f.id+'">'+f.n+'</button>'}).join('')+'</div>';
   if(d.freq==='maand'){
     h+='<div class="chips" style="margin-top:10px"><button class="chip'+(d.maanden?'':' on')+'" data-act="maandenuit">Elke maand</button><button class="chip'+(d.maanden?' on':'')+'" data-act="maandenaan">Alleen in sommige maanden</button></div>';
-    if(d.maanden)h+='<div class="chips" style="margin-top:8px">'+MND.map(function(n,i){return '<button class="chip'+(d.maanden.indexOf(i+1)>=0?' on':'')+'" data-act="mndkies" data-v="'+(i+1)+'" style="min-width:52px">'+n+'</button>'}).join('')+'</div>'
-      + '<div class="note">Bijvoorbeeld gemeentebelasting in tien termijnen, maart tot en met december.</div>';
+    if(d.maanden)h+='<div class="chips" style="margin-top:8px">'+MND.map(function(n,i){return '<button class="chip'+(d.maanden.indexOf(i+1)>=0?' on':'')+'" data-act="mndkies" data-v="'+(i+1)+'" style="min-width:52px">'+n+'</button>'}).join('')+'</div>';
   }
   h+='<div class="omrek" id="f_omrek">'+omrekTekst()+'</div>';
   h+='<div class="label">Soort</div>'+catKiezer(d.cat);
-  var auto=pijlerVan(d.cat,true);
-  h+='<div class="label">Hoort bij</div><div class="chips">'+PIJLERS.map(function(x){var on=(d.pijler||auto)===x.id;return '<button class="chip'+(on?' on':'')+'" data-act="pijlerkies" data-v="'+x.id+'">'+esc(x.n)+(x.id===auto&&!d.pijler?' (vanzelf)':'')+'</button>'}).join('')+'</div>'
-    + '<div class="note">Bepaalt in welke cirkel op het huisje dit meetelt. Vaste lasten liggen vast; bij uitgaven en vervoer mag de app schuiven.</div>';
-  h+='<div class="label">Hoe lang?</div><div class="chips"><button class="chip'+(d.aantal?'':' on')+'" data-act="tijduit">Doorlopend</button><button class="chip'+(d.aantal?' on':'')+'" data-act="tijdaan">Tijdelijk, een aantal keer</button></div>';
-  if(d.aantal){
-    h+='<div class="stepper" style="margin-top:8px"><span class="sl">Aantal keer</span><span class="sc"><button data-act="tijdstap" data-d="-1">−</button><span class="sn">'+d.aantal+'</span><button data-act="tijdstap" data-d="1">+</button></span></div>';
-    var tp={id:d.id||'nieuw',start:d.start||today(),freq:d.freq,aantal:d.aantal,maanden:d.maanden,afw:(S.posten.filter(function(x){return x.id===d.id})[0]||{}).afw};
-    var ti=tijdelijkInfo(tp), ts=tijdelijkStand(tp);
-    if(ti)h+='<div class="note">Eerste keer '+esc(datum(ti.eerste,1))+', laatste keer '+esc(datum(ts.laatste,1))+'. '+(ts.nog?'Nog '+ts.nog+' van de '+ts.totaal+' te gaan.':'Alles is betaald.')+' Daarna stopt hij vanzelf.</div>';
+  h+='<div class="label">Dag van afschrijven</div><input class="field" type="date" id="f_start" value="'+esc(d.start)+'">'
+    + '<div class="note">Mag een oude datum zijn: vanaf die dag rekent de app verder.</div>';
+
+  /* bij een bestaande: meteen zien wat er is afgeschreven */
+  if(p&&actief(p)){
+    var t=today(), lijst=afschrijvingen(p,iso(new Date(Date.now()-130*86400000)),iso(new Date(Date.now()+400*86400000)));
+    var gedaan=lijst.filter(function(x){return x.d<=t}).slice(-4).reverse(), komt=lijst.filter(function(x){return x.d>t}).slice(0,1);
+    h+='<div class="label">Afschrijvingen</div>';
+    if(d.afMelding)h+='<div class="flash" style="margin:0 0 8px">'+esc(d.afMelding)+'</div>';
+    h+='<div class="card">';
+    komt.concat(gedaan).forEach(function(x){
+      var bev=bevestigd(p,x.pl), toek=x.d>t;
+      h+='<button class="rij" data-act="afrij" data-pl="'+x.pl+'"'+(d.afPl===x.pl&&d.afOpen?' style="background:var(--surface2)"':'')+'><div class="t"><div class="n" style="font-size:14.5px">'+esc(datum(x.d))+'</div>'
+        + '<div class="m">'+(toek?'al afgegaan? tik hier':'periode '+esc(periodeNaam(periodeVan(x.d))))+'</div></div>'
+        + '<div class="b"><div class="a">'+eur(x.b)+'</div><div class="p"><span class="tag '+(bev?'af">✓ bevestigd':toek?'nog">komt nog':'af">afgeschreven')+'</span></div></div></button>';
+    });
+    h+='</div>';
+    if(d.afOpen){
+      var afd=d.afd||t, dg=+afd.slice(8,10);
+      h+='<div class="note" style="color:var(--sand)">Op welke dag ging hij echt van je rekening? Dan telt hij mee in de periode waar die dag in valt.</div>'
+        + '<input class="field" type="date" id="f_afd" value="'+esc(afd)+'" style="margin-top:8px">'
+        + ((FR[d.freq]||FR.maand).m?'<button class="schakel'+(d.afVast?' on':'')+'" data-act="afvast" style="margin-top:8px"><span>Voortaan elke keer op de '+dg+'e</span><i></i></button>':'')
+        + '<div class="twee" style="margin-top:10px"><button class="btn outline klein" data-act="afdicht" style="margin:0">Annuleren</button><button class="btn klein" data-act="afbewaar" style="margin:0">✓ Bevestigen</button></div>'
+        + (d.afPl&&bevestigd(p,d.afPl)?'<button class="btn outline klein" data-act="afterug">Bevestiging weghalen</button>':'');
+    }else h+='<div class="note">Tik op een regel om te bevestigen dat hij is afgegaan, of om de dag te veranderen.</div>';
   }
-  h+='<div class="twee"><div><div class="label">Een dag van afschrijven</div><input class="field" type="date" id="f_start" value="'+esc(d.start)+'"></div>'
-    + '<div><div class="label">Contract loopt af</div><input class="field" type="date" id="f_eind" value="'+esc(d.eind||'')+'"></div></div>';
-  h+='<div class="note">Een datum waarop het werd of wordt afgeschreven, mag een oude zijn. Vanaf die dag rekent de app verder. Met een einddatum waarschuwt de app twee maanden van tevoren.</div>';
-  h+='<div class="label">Leverancier (mag leeg)</div><input class="field" id="f_lev" placeholder="Bijvoorbeeld: Eneco, Ziggo" value="'+esc(d.lev||'')+'" autocomplete="off">';
-  h+='<div class="label">Notitie</div><textarea class="field" id="f_not" placeholder="Klantnummer, wat er in zit, wanneer opzeggen…">'+esc(d.notitie||'')+'</textarea>';
-  if(!nieuw){
-    var p=S.posten.filter(function(x){return x.id===d.id})[0];
+
+  /* alles wat je maar af en toe nodig hebt */
+  var auto=pijlerVan(d.cat,true), extra=[];
+  if(d.pijler)extra.push(PIJ[d.pijler].n);
+  if(d.aantal)extra.push(d.aantal+'×');
+  if(d.gestopt)extra.push('gestopt');
+  if(d.eind)extra.push('contract');
+  if(d.lev)extra.push(d.lev);
+  if(d.bewust)extra.push('geen tips');
+  h+='<button class="catkeus" data-act="meer" style="margin-top:18px"><span class="t">Meer'+(extra.length?' <span class="dim" style="font-weight:500">· '+esc(extra.join(' · '))+'</span>':'')+'</span><span class="w">'+(d.meer?'minder':'tonen')+'</span></button>';
+  if(d.meer){
+    h+='<div class="label">Hoort bij</div><div class="chips">'+PIJLERS.map(function(x){var on=(d.pijler||auto)===x.id;return '<button class="chip'+(on?' on':'')+'" data-act="pijlerkies" data-v="'+x.id+'">'+esc(x.n)+(x.id===auto&&!d.pijler?' (vanzelf)':'')+'</button>'}).join('')+'</div>'
+      + '<div class="note">In welke cirkel op het huisje dit meetelt.</div>';
+    h+='<div class="label">Hoe lang?</div><div class="chips"><button class="chip'+(!d.aantal&&!d.gestopt?' on':'')+'" data-act="tijduit">Doorlopend</button><button class="chip'+(d.aantal?' on':'')+'" data-act="tijdaan">Een aantal keer</button>'
+      + (nieuw?'':'<button class="chip'+(d.gestopt?' on':'')+'" data-act="tijdstop">Opgezegd</button>')+'</div>';
+    if(d.aantal){
+      h+='<div class="stepper" style="margin-top:8px"><span class="sl">Aantal keer</span><span class="sc"><button data-act="tijdstap" data-d="-1">−</button><span class="sn">'+d.aantal+'</span><button data-act="tijdstap" data-d="1">+</button></span></div>';
+      var tp={id:d.id||'nieuw',start:d.start||today(),freq:d.freq,aantal:d.aantal,maanden:d.maanden,afw:p&&p.afw};
+      var ti=tijdelijkInfo(tp), ts=tijdelijkStand(tp);
+      if(ti)h+='<div class="note">Eerste keer '+esc(datum(ti.eerste,1))+', laatste keer '+esc(datum(ts.laatste,1))+'. '+(ts.nog?'Nog '+ts.nog+' van de '+ts.totaal+' te gaan.':'Alles is betaald.')+' Daarna stopt hij vanzelf.</div>';
+    }
+    if(d.gestopt)h+='<input class="field" type="date" id="f_gestopt" value="'+esc(d.gestopt)+'" style="margin-top:8px"><div class="note">Vanaf deze dag telt hij niet meer mee. Eerdere periodes blijven kloppen.</div>';
+    h+='<div class="label">Contract loopt af (mag leeg)</div><input class="field" type="date" id="f_eind" value="'+esc(d.eind||'')+'"><div class="note">Twee maanden van tevoren krijg je een tip om te vergelijken.</div>';
+    h+='<div class="label">Leverancier (mag leeg)</div><input class="field" id="f_lev" placeholder="Bijvoorbeeld: Eneco, Ziggo" value="'+esc(d.lev||'')+'" autocomplete="off">';
+    h+='<div class="label">Notitie</div><textarea class="field" id="f_not" placeholder="Klantnummer, wat er in zit, wanneer opzeggen…">'+esc(d.notitie||'')+'</textarea>';
+    h+='<button class="schakel'+(d.bewust?' on':'')+'" data-act="bewusttoggle" style="margin-top:14px"><span>Bewust zo ingesteld, geen tips</span><i></i></button>';
     if(p&&p.hist&&p.hist.length>1){
       h+='<div class="label">Prijs door de tijd</div><div class="hist">';
       p.hist.forEach(function(x,i){
@@ -1381,37 +1390,9 @@ function postForm(){
       });
       h+='</div>';
     }
-    h+='<div class="label">Tips</div><button class="schakel'+(d.bewust?' on':'')+'" data-act="bewusttoggle"><span>Bewust zo ingesteld, geen tips</span><i></i></button>'
-      + '<div class="note">Bijvoorbeeld als je je termijnbedrag zelf hoger hebt gezet. De app zegt er dan niets meer over bij Besparen.</div>';
-    if(p&&actief(p)){
-      var t=today(), lijst=afschrijvingen(p,iso(new Date(Date.now()-130*86400000)),iso(new Date(Date.now()+400*86400000)));
-      var gedaan=lijst.filter(function(x){return x.d<=t}).slice(-4), komt=lijst.filter(function(x){return x.d>t}).slice(0,1);
-      h+='<div class="label">Afschrijvingen</div>';
-      if(d.afMelding)h+='<div class="flash" style="margin:0 0 8px">'+esc(d.afMelding)+'</div>';
-      h+='<div class="card">';
-      gedaan.reverse();
-      komt.concat(gedaan).forEach(function(x){
-        var bev=bevestigd(p,x.pl), toek=x.d>t;
-        h+='<button class="rij" data-act="afrij" data-pl="'+x.pl+'"'+(d.afPl===x.pl&&d.afOpen?' style="background:var(--surface2)"':'')+'><div class="t"><div class="n" style="font-size:14.5px">'+esc(datum(x.d))+'</div>'
-          + '<div class="m">periode '+esc(periodeNaam(periodeVan(x.d)))+'</div></div>'
-          + '<div class="b"><div class="a">'+eur(x.b)+'</div><div class="p"><span class="tag '+(bev?'af">✓ bevestigd':toek?'nog">komt nog':'af">afgeschreven')+'</span></div></div></button>';
-      });
-      h+='</div><div class="note">Tik op een regel om de dag te veranderen of te bevestigen. Wat je bevestigt, staat vast en gaat mee in je back-up.</div>';
-      if(!d.afOpen)h+='<button class="btn outline klein" data-act="afopen">✓ Al afgeschreven</button>';
-      else{
-        var afd=d.afd||t, dg=+afd.slice(8,10);
-        h+='<div class="note" style="color:var(--sand)">'+(d.afPl?'Afschrijving van '+esc(maandNaam(ym(d.afPl)))+':':'Op welke dag ging het echt van je rekening?')+' kies de echte dag. Dan telt de app hem mee in de periode waar die dag in valt.</div>'
-          + '<input class="field" type="date" id="f_afd" value="'+esc(afd)+'" style="margin-top:8px">'
-          + ((FR[d.freq]||FR.maand).m?'<button class="schakel'+(d.afVast?' on':'')+'" data-act="afvast" style="margin-top:8px"><span>Voortaan elke keer op de '+dg+'e</span><i></i></button>':'')
-          + '<div class="twee" style="margin-top:10px"><button class="btn outline klein" data-act="afdicht" style="margin:0">Annuleren</button><button class="btn klein" data-act="afbewaar" style="margin:0">Opslaan</button></div>'
-          + (d.afPl&&bevestigd(p,d.afPl)?'<button class="btn outline klein" data-act="afterug">Bevestiging weghalen</button>':'');
-      }
-    }
-    h+='<div class="label">Opgezegd</div><button class="schakel'+(d.gestopt?' on':'')+'" data-act="stoptoggle"><span>'+(d.gestopt?'Opgezegd per '+esc(datum(d.gestopt,1)):'Loopt nog')+'</span><i></i></button>';
-    if(d.gestopt)h+='<input class="field" type="date" id="f_gestopt" value="'+esc(d.gestopt)+'" style="margin-top:8px"><div class="note">Vanaf deze dag telt hij niet meer mee. Eerdere maanden blijven kloppen.</div>';
   }
   h+='<button class="btn" data-act="postbewaar">Bewaren</button>';
-  if(!nieuw)h+='<button class="btn outline" data-act="postkopie">Kopiëren</button><button class="btn rood" data-act="postweg">Verwijderen</button>';
+  if(!nieuw)h+='<div class="twee" style="margin-top:10px"><button class="btn outline klein" data-act="postkopie" style="margin:0">Kopiëren</button><button class="btn rood klein" data-act="postweg" style="margin:0">Verwijderen</button></div>';
   return h;
 }
 function omrekTekst(){
@@ -1525,7 +1506,7 @@ function leesLosForm(){
 function openLos(id,cat){
   if(ui.sheet==='pijler'){bladGeduwd=false;hideSheet()}
   var u=id?S.uitgaven.filter(function(x){return x.id===id})[0]:null;
-  var k=ui.maand||ym(today()), dflt=k===ym(today())?today():k+'-01';
+  var pr=periode(ui.per||0), t0=today(), dflt=t0>=pr.van&&t0<=pr.tot?t0:(t0>pr.tot?pr.tot:pr.van);
   ui.draft=u?{id:u.id,bedragTxt:eurTekst(u.b),cat:u.cat,oms:u.oms||'',d:u.d,catHand:true}:{bedragTxt:'',cat:cat||'boodsch',oms:'',d:dflt,catHand:!!cat};
   ui.sheet='los'; ui.catOpen=!u;
   openSheet(losForm());
@@ -1541,7 +1522,6 @@ function bewaarLos(nog){
   S.begonnen=true; save();
   if(nog){ui.draft={bedragTxt:'',cat:d.cat,oms:'',d:d.d,catHand:false};ui.catOpen=false;herteken();render();
     setTimeout(function(){var e=document.getElementById('l_bedrag');if(e)e.focus()},50);return}
-  ui.maand=ym(d.d||today());
   closeSheet(); render();
   if(ui.pijler&&ui.tab==='home'){var pj=ui.pijler;setTimeout(function(){openPijler(pj)},30)}
 }
@@ -1564,7 +1544,7 @@ function jaarHtml(j,voorPrint){
   if(voorPrint)h+='<h1>Huishoudboek — jaaroverzicht '+j+'</h1><div class="sub">Gemaakt op '+esc(datum(today(),1))+' · '+esc(S.hh.volw)+' volw. · '+esc(S.hh.kind)+' kind.</div>';
   h+=(voorPrint?'<div class="kpi3">':'<div class="drie2" style="margin-top:4px">')
     + [['Vaste lasten',d.tv],['Losse uitgaven',d.tl],['Totaal',tot]].map(function(x){return voorPrint?'<div>'+x[0]+'<b>'+eur(x[1])+'</b></div>':'<div class="regel"><div class="k">'+x[0]+'</div><div class="v" style="font-size:15px">'+eur(x[1],1)+'</div></div>'}).join('')+'</div>';
-  if(d.n)h+='<div class="'+(voorPrint?'sub':'note')+'" style="margin-top:6px">Gemiddeld '+eur(tot/d.n)+' per maand over '+d.n+' maand'+(d.n===1?'':'en')+(+S.hh.inkomen?' · inkomen '+eur(S.hh.inkomen)+' per maand':'')+'</div>';
+  if(d.n)h+='<div class="'+(voorPrint?'sub':'note')+'" style="margin-top:6px">Gemiddeld '+eur(tot/d.n)+' per maand over '+d.n+' maand'+(d.n===1?'':'en')+(+S.hh.inkomen&&(voorPrint||!S.hideInk)?' · inkomen '+eur(S.hh.inkomen)+' per maand':'')+'</div>';
   h+=(voorPrint?'<h2>Per maand</h2>':'<div class="label">Per maand</div>')+'<table class="'+cls+'"><tr><th>Maand</th><th class="r">Vast</th><th class="r">Los</th><th class="r">Totaal</th></tr>';
   d.maanden.forEach(function(m){
     h+='<tr class="'+(m.toek?'toek':'')+'"><td style="text-transform:capitalize">'+esc(maandNaam(m.k).replace(' '+j,''))+(m.toek?' (verwacht)':'')+'</td><td class="r">'+eur(m.tv)+'</td><td class="r">'+(m.toek?'':eur(m.tl))+'</td><td class="r">'+(m.toek?'':eur(m.tv+m.tl))+'</td></tr>';
@@ -1600,13 +1580,14 @@ function openJaar(){ui.sheet='jaar';openSheet(jaarForm())}
 function instellingenForm(){
   var h=kop('Instellingen');
   h+='<div class="label">Huishouden</div>'+huishoudenBlok();
-  h+='<div class="label">Netto inkomen per maand, samen (mag leeg)</div><div class="eur"><input class="field" id="s_ink" inputmode="decimal" placeholder="0" value="'+(+S.hh.inkomen?esc(eurTekst(S.hh.inkomen)):'')+'"></div>'
+  h+='<div class="label">Netto inkomen per maand, samen (mag leeg)</div><div class="eur">'+(S.hideInk&&+S.hh.inkomen?'<button class="field" data-act="hideink" style="text-align:left;color:var(--dim)">••••  (tik om te tonen)</button>':'<input class="field" id="s_ink" inputmode="decimal" placeholder="0" value="'+(+S.hh.inkomen?esc(eurTekst(S.hh.inkomen)):'')+'">')+'</div>'
     + '<div class="note">Alleen voor jezelf: dan zie je welk deel van je inkomen naar vaste lasten gaat, en of je misschien recht hebt op toeslag.</div>';
   h+='<div class="label">Salaris</div><div class="stepper"><span class="sl">Komt op de</span><span class="sc"><button data-act="betaaldag" data-d="-1">−</button><span class="sn">'+(+S.hh.betaaldag||25)+'e</span><button data-act="betaaldag" data-d="1">+</button></span></div>'
     + '<button class="schakel'+(S.hh.weekend!==false?' on':'')+'" data-act="weekend" style="margin-top:8px"><span>Valt het in het weekend: de vrijdag ervoor</span><i></i></button>'
     + '<div class="label">Vaste lasten in het weekend</div><div class="chips">'+[['voor','Vrijdag ervoor'],['na','Maandag erna'],['geen','Niet schuiven']].map(function(o){return '<button class="chip'+((S.hh.vastWeekend||'voor')===o[0]?' on':'')+'" data-act="vastweekend" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'
     + '<div class="note">Het huisje rekent van salaris tot salaris. Nu: '+esc(periodeNaam(periode(0)))+'.</div>';
-  h+='<div class="label">Privacy</div><button class="schakel'+(S.hide?' on':'')+'" data-act="hide"><span>Bedragen verbergen</span><i></i></button>'
+  h+='<div class="label">Privacy</div><button class="schakel'+(S.hideInk?' on':'')+'" data-act="hideink"><span>Inkomen verbergen (het oogje bovenin)</span><i></i></button>'
+    + '<button class="schakel'+(S.hide?' on':'')+'" data-act="hide" style="margin-top:8px"><span>Alle bedragen verbergen</span><i></i></button>'
     + '<button class="schakel'+(S.pin?' on':'')+'" data-act="pinzet" style="margin-top:8px"><span>'+(S.pin?'Pincode staat aan':'Pincode van vier cijfers')+'</span><i></i></button>'
     + '<div class="note">'+(S.pin?'Tik om de pincode weg te halen. ':'')+'Met een pincode gaat de app op slot als je hem opent, en als hij drie minuten op de achtergrond stond. De pincode gaat mee in je back-up.</div>'
     + '<div class="label">Jaaroverzicht</div><button class="btn outline klein" data-act="jaaropen" style="margin-top:0">Jaaroverzicht bekijken en afdrukken</button>';
@@ -1713,7 +1694,8 @@ document.addEventListener('click',function(e){
   if(act==='vraagja'){document.getElementById('vraag').innerHTML='';var cb=vraagCb;vraagCb=null;if(cb)cb();return}
   if(act==='vraagnee'){document.getElementById('vraag').innerHTML='';vraagCb=null;return}
 
-  if(act==='tab'){ui.tab=b.dataset.v;if(ui.tab==='home')ui.per=0;ui.opruim=false;ui.ongedaan=null;if(!ui.maand)ui.maand=ym(today());save();render();window.scrollTo(0,0);return}
+  if(act==='tab'){ui.tab=b.dataset.v;ui.opruim=false;ui.ongedaan=null;if(!ui.maand)ui.maand=ym(today());save();render();window.scrollTo(0,0);return}
+  if(act==='hideink'){S.hideInk=!S.hideInk;save();render();if(ui.sheet)herteken();return}
   if(act==='hide'){S.hide=!S.hide;save();render();if(ui.sheet==='instellingen')herteken();return}
   if(act==='instellingen'){openInstellingen();return}
   if(act==='close'){ui.pijler=null;closeSheet();return}
@@ -1721,7 +1703,7 @@ document.addEventListener('click',function(e){
   if(act==='snelweg'){var ix2=-1;S.posten.forEach(function(x,i){if(x.id===b.dataset.id)ix2=i});
     if(ix2>=0){ui.ongedaan={p:S.posten[ix2],i:ix2};S.posten.splice(ix2,1);save();render()}return}
   if(act==='ongedaan'){var og=ui.ongedaan;if(og){S.posten.splice(Math.min(og.i,S.posten.length),0,og.p);ui.ongedaan=null;save();render()}return}
-  if(act==='vastweer'){ui.vastWeer=b.dataset.v;ui.vastPer=0;render();return}
+  if(act==='vastweer'){ui.vastWeer=b.dataset.v;render();return}
   if(act==='vastper'){ui.vastPer=Math.min(12,(ui.vastPer||0)+(+b.dataset.d));render();return}
   if(act==='sort'){ui.sort=ui.sort==='cat'?'duur':'cat';render();return}
   if(act==='catvast'){ui.tab='vast';ui.sort='cat';ui.zoek='';render();var g=document.getElementById('g-'+b.dataset.v);if(g)g.scrollIntoView({block:'start'});window.scrollBy(0,-80);return}
@@ -1739,8 +1721,10 @@ document.addEventListener('click',function(e){
   if(act==='catopen'){ui.catOpen=!ui.catOpen;herteken();return}
   if(act==='catkies'){ui.draft.cat=b.dataset.v;ui.draft.catHand=true;ui.catOpen=false;herteken();return}
   if(act==='pijlerkies'){leesPostForm();ui.draft.pijler=b.dataset.v===pijlerVan(ui.draft.cat,true)?'':b.dataset.v;herteken();return}
-  if(act==='tijduit'){leesPostForm();ui.draft.aantal=0;herteken();return}
-  if(act==='tijdaan'){leesPostForm();ui.draft.aantal=ui.draft.aantal||10;herteken();return}
+  if(act==='tijduit'){leesPostForm();ui.draft.aantal=0;ui.draft.gestopt='';herteken();return}
+  if(act==='tijdstop'){leesPostForm();ui.draft.aantal=0;ui.draft.gestopt=ui.draft.gestopt||today();herteken();return}
+  if(act==='meer'){leesPostForm();ui.draft.meer=!ui.draft.meer;herteken();return}
+  if(act==='tijdaan'){leesPostForm();ui.draft.aantal=ui.draft.aantal||10;ui.draft.gestopt='';herteken();return}
   if(act==='tijdstap'){leesPostForm();ui.draft.aantal=Math.max(1,Math.min(360,(ui.draft.aantal||10)+(+b.dataset.d)));herteken();return}
   if(act==='bewusttoggle'){leesPostForm();ui.draft.bewust=!ui.draft.bewust;herteken();return}
   if(act==='afopen'){leesPostForm();ui.draft.afOpen=true;ui.draft.afd=today();ui.draft.afPl='';ui.draft.afVast=false;ui.draft.afMelding='';herteken();return}
@@ -1759,7 +1743,10 @@ document.addEventListener('click',function(e){
 
   if(act==='nieuwlos'){openLos(null,b.dataset.cat);return}
   if(act==='pijler'){openPijler(b.dataset.v);return}
-  if(act==='per'){var dd=+b.dataset.d;ui.per=dd===0?0:Math.min(0,(ui.per||0)+dd);render();window.scrollTo(0,0);return}
+  if(act==='per'){var dd=+b.dataset.d;ui.per=dd===0?0:Math.max(-36,Math.min(12,(ui.per||0)+dd));render();window.scrollTo(0,0);return}
+  if(act==='thuis'){ui.tab='home';ui.per=0;render();window.scrollTo(0,0);return}
+  if(act==='kiesper'){ui.per=+b.dataset.v;render();return}
+  if(act==='vastperiode'){ui.tab='vast';ui.vastWeer='periode';render();window.scrollTo(0,0);return}
   if(act==='betaaldag'){S.hh.betaaldag=Math.max(1,Math.min(31,(+S.hh.betaaldag||25)+(+b.dataset.d)));save();render();herteken();return}
   if(act==='weekend'){S.hh.weekend=S.hh.weekend===false;save();render();herteken();return}
   if(act==='los'){openLos(b.dataset.id);return}
@@ -1777,7 +1764,7 @@ document.addEventListener('click',function(e){
   if(act==='spaar'){S.spaar=+b.dataset.v;save();render();return}
   if(act==='toonweg'){ui.toonWeg=!ui.toonWeg;render();return}
 
-  if(act==='jaaropen'){ui.jaar=+(ui.maand||today()).slice(0,4);openJaar();return}
+  if(act==='jaaropen'){ui.jaar=+periode(ui.per||0).van.slice(0,4);openJaar();return}
   if(act==='jaar'){ui.jaar+=+b.dataset.d;herteken();return}
   if(act==='printjaar'){
     /* op papier altijd de echte bedragen, ook als ze in de app verborgen zijn */
@@ -1834,7 +1821,7 @@ document.addEventListener('input',function(e){
   }
   if(id==='f_afd'){ui.draft.afd=e.target.value;var sw=document.querySelector('[data-act=afvast] span');if(sw&&e.target.value)sw.textContent='Voortaan elke keer op de '+(+e.target.value.slice(8,10))+'e';return}
   if(id==='h_ink'){var bv=getal(e.target.value);S.hh.inkomen=bv>0?bv:0;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){var y=window.scrollY;render();window.scrollTo(0,y)},1200);return}
-  if(id==='s_ink'){var v=getal(e.target.value);S.hh.inkomen=v>0?v:0;save();render();return}
+  if(id==='s_ink'){var v=getal(e.target.value);S.hh.inkomen=v>0?v:0;save();clearTimeout(inkTimer);inkTimer=setTimeout(function(){render()},900);return}
 });
 
 /* ───────────────────────────── start ───────────────────────────── */
