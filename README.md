@@ -1,4 +1,4 @@
-# Huishoudboek · v16
+# Huishoudboek · v17
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -60,6 +60,16 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 - **Voorgeschoten**: geld dat je voorschiet voor klussen of telefoons telt niet
   mee bij je uitgaven. Terug gekregen (contant of via de bank) vul je in; het
   huisje laat zien wat je per soort nog terugkrijgt
+- **Bankafschrift inlezen**: PDF of CSV van de Rabobank, bij Uitgaven of het
+  tandwiel. Wordt op het toestel zelf gelezen (pdf.js staat in de map), ook
+  zonder internet. Vaste lasten worden bevestigd, de rest ingedeeld; wat er al
+  in staat wordt overgeslagen. Wat je verandert, onthoudt de app
+- **Voor wie**: bij voorgeschoten vul je in voor wie; per persoon zie je wat nog
+  open staat en stuur je een bericht met het overzicht
+- **Snelknoppen**: wat je vaak invult staat bovenaan een nieuwe uitgave
+- **Spaardoelen** met hoeveel je per maand nodig hebt
+- **Extra inkomen** per periode (kinderbijslag, uitkering, declaratie)
+- **Maandafsluiting**: aan het begin van een periode zie je hoe de vorige ging
 - **Eigen soorten**: onder "Eigen soort" maak je een soort met naam en
   icoontje; bij voorgeschoten zet je met "+ Eigen" iets bij (klussen, telefoons,
   vlees en iets anders staan er al). Weghalen kan bij het tandwiel
@@ -86,14 +96,16 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
     manifest.json     maakt hem installeerbaar op je beginscherm
     icon-192.png      pictogram
     icon-512.png      pictogram
+    pdf.min.js        pdf.js (Mozilla, Apache 2.0) om afschriften te lezen
+    pdf.worker.min.js hoort bij pdf.js
     .gitignore        houdt back-upbestanden buiten GitHub
 
 ## Een nieuwe versie uitbrengen
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='16'` bovenaan het script
-2. `sw.js` — `huishoudboek-v16`
+1. `index.html` — `var VERSIE='17'` bovenaan het script
+2. `sw.js` — `huishoudboek-v17`
 
 ## Nooit in deze repo
 

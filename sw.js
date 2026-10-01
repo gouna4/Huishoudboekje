@@ -1,5 +1,5 @@
-var CACHE = 'huishoudboek-v16';
-var FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+var CACHE = 'huishoudboek-v17';
+var FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './pdf.min.js', './pdf.worker.min.js'];
 var WACHT = 2000; /* zo lang wachten we op het netwerk voordat we de opgeslagen versie pakken */
 
 self.addEventListener('install', function (e) {
