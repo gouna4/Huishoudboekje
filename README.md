@@ -1,4 +1,4 @@
-# Huishoudboek · v17
+# Huishoudboek · v19
 
 Je vaste lasten en uitgaven bijhouden, zien waar je geld heen gaat, en tips
 krijgen waar je kunt besparen. Broertje van het telefoonboek en het klusboek.
@@ -64,6 +64,11 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
   tandwiel. Wordt op het toestel zelf gelezen (pdf.js staat in de map), ook
   zonder internet. Vaste lasten worden bevestigd, de rest ingedeeld; wat er al
   in staat wordt overgeslagen. Wat je verandert, onthoudt de app
+- **Boodschappen via ING**: bij het tandwiel kies je of de overboeking naar ING
+  telt, of het ingelezen ING-afschrift (CSV). Beide worden bewaard, er telt er
+  altijd maar één, dus nooit dubbel
+- **Per uitgave betaald**: tik bij Voorgeschoten op een soort (Klussen, Telefoons…)
+  en zet per uitgave ✓ Betaald, of alles in één keer
 - **Voor wie**: bij voorgeschoten vul je in voor wie; per persoon zie je wat nog
   open staat en stuur je een bericht met het overzicht
 - **Snelknoppen**: wat je vaak invult staat bovenaan een nieuwe uitgave
@@ -104,8 +109,8 @@ Deze bestanden zijn leeg: wie de site opent, krijgt een leeg boek.
 
 Verhoog het nummer op twee plekken, anders zie je je eigen wijziging niet:
 
-1. `index.html` — `var VERSIE='17'` bovenaan het script
-2. `sw.js` — `huishoudboek-v17`
+1. `index.html` — `var VERSIE='19'` bovenaan het script
+2. `sw.js` — `huishoudboek-v19`
 
 ## Nooit in deze repo
 
